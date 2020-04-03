@@ -25,7 +25,10 @@ function drawNodes(ctx, data) {
     const newNodes = nodes
         .enter()
         .append("circle")
-        .classed("node", true);
+        .classed("node", true)
+        .attr("cx", 200)
+        .attr("cy", 200)
+        .attr("r", 1);
 
     nodes
         .merge(newNodes)
@@ -47,13 +50,16 @@ function drawEdges(ctx, data) {
     const edges = ctx
         .viz
         .selectAll(".edge")
-        .data(data.filter(d => d.parent !== null))
-        // .filter();
+        .data(data.filter(d => d.parent !== null));
 
     const newEdges = edges
         .enter()
         .append("line")
-        .classed("edge", true);
+        .classed("edge", true)
+        .attr("x1", 200)
+        .attr("x2", 200)
+        .attr("y1", 200)
+        .attr("y2", 200);
 
     edges
         .merge(newEdges)
