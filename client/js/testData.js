@@ -1,4 +1,13 @@
-const rawData = `
+const simpleData = `
+    a 
+        aa 
+            aaa
+        ab 
+            aba 
+            abb
+        ac`;
+
+const complexData = `
     a 
         aa 
         ab 
@@ -128,4 +137,4 @@ function mkData(dataStr) {
 }
 
 
-export default mkData(rawData);
+export default mkData(simpleData);

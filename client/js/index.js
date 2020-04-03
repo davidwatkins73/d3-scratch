@@ -76,8 +76,9 @@ function drawEdges(ctx, data) {
 }
 
 
-function draw(ctx, data) {
-    const root = ctx.layout(data || ctx.hierData);
+function draw(ctx) {
+    const root = ctx.layout(ctx.hierData);
+    console.log("draw", ctx)
     const descendants = root.descendants();
     drawEdges(ctx, descendants);
     drawNodes(ctx, descendants);
@@ -85,28 +86,24 @@ function draw(ctx, data) {
 
 
 function focus(d, ctx) {
-    delete d.data.parentId;
-    const descendants = d3.stratify()(d.descendants().map(d => Object.assign({}, d.data)));
-    draw(ctx, descendants);
+    ctx.hierData.descendants().forEach(d => d.visible = false);
+    d.descendants().forEach(d => d.data.visible = true);
+    draw(ctx);
 }
 
 
 function boot(rawData) {
     const hierData = d3.stratify()(rawData);
-
     const layout = d3
         .tree()
         .size([500, 400]);
 
-    const trans = d3
-        .transition()
-        .duration(200)
-        .ease(d3.easeLinear);
-
-    const g = setupSvg();
     const ctx = {
-        viz: g,
-        trans,
+        viz: setupSvg(),
+        trans: d3
+            .transition()
+            .duration(200)
+            .ease(d3.easeLinear),
         layout,
         hierData
     };
