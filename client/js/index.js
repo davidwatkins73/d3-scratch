@@ -16,50 +16,83 @@ function setupSvg() {
 }
 
 
-function draw(viz, root) {
-    const descendants = root.descendants();
-
+function drawNodes(viz, descendants) {
     const nodes = viz
         .selectAll(".node")
         .data(descendants);
 
-    nodes
+    const newNodes = nodes
         .enter()
         .append("circle")
-        .classed("node", true)
+        .classed("node", true);
+
+    nodes
+        .merge(newNodes)
         .attr("r", d => Math.max(8 - d.depth, 2))
         .attr("cx", d => d.x)
         .attr("cy", d => d.y)
         .attr("stroke", "red")
         .attr("fill", "pink")
-        ;
+        .on("click", d => focus(d));
 
+    nodes
+        .exit()
+        .remove();
+}
+
+
+function drawEdges(viz, descendants) {
     const edges = viz
         .selectAll(".edge")
         .data(descendants);
 
-    edges
+    const newEdges = edges
         .enter()
         .filter(d => d.parent !== null)
         .append("line")
-        .classed("edge", true)
+        .classed("edge", true);
+
+    edges
+        .merge(newEdges)
         .attr("x1", d => d.parent.x)
         .attr("x2", d => d.x)
         .attr("y1", d => d.parent.y)
         .attr("y2", d => d.y)
-        .attr("stroke", "purple")
-        ;
+        .attr("stroke", "purple");
+
+    edges
+        .exit()
+        .remove();
 }
 
 
-const rawData = testData;
-const hierData = d3.stratify()(rawData);
-const treeRoot = d3
+function draw(viz, hierData, layout) {
+    const root = layout(hierData);
+    const descendants = root.descendants();
+    drawEdges(viz, descendants);
+    drawNodes(viz, descendants);
+    console.log({descendants, root})
+}
+
+
+function focus(d) {
+    const descendants = d.descendants();
+    draw(g, d);
+}
+
+
+function boot(layout) {
+    const rawData = testData;
+    const hierData = d3.stratify()(rawData);
+
+    const g = setupSvg();
+    draw(g, hierData, layout);
+    return g;
+}
+
+
+const treeLayout = d3
     .tree()
-    .size([500, 400])
-    (hierData);
+    .size([500, 400]);
 
-const g = setupSvg();
-draw(g, treeRoot);
-
-console.log({data: rawData, hierData, treeRoot});
+const g = boot(treeLayout);
