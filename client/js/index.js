@@ -16,10 +16,11 @@ function setupSvg() {
 }
 
 
-function drawNodes(viz, descendants) {
-    const nodes = viz
+function drawNodes(ctx, data) {
+    const nodes = ctx
+        .viz
         .selectAll(".node")
-        .data(descendants);
+        .data(data);
 
     const newNodes = nodes
         .enter()
@@ -29,11 +30,12 @@ function drawNodes(viz, descendants) {
     nodes
         .merge(newNodes)
         .attr("r", d => Math.max(8 - d.depth, 2))
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
         .attr("stroke", "red")
         .attr("fill", "pink")
-        .on("click", d => focus(d));
+        .on("click", d => focus(d, ctx))
+        .transition(ctx.trans)
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
 
     nodes
         .exit()
@@ -41,24 +43,26 @@ function drawNodes(viz, descendants) {
 }
 
 
-function drawEdges(viz, descendants) {
-    const edges = viz
+function drawEdges(ctx, data) {
+    const edges = ctx
+        .viz
         .selectAll(".edge")
-        .data(descendants);
+        .data(data.filter(d => d.parent !== null))
+        // .filter();
 
     const newEdges = edges
         .enter()
-        .filter(d => d.parent !== null)
         .append("line")
         .classed("edge", true);
 
     edges
         .merge(newEdges)
+        .attr("stroke", "purple")
+        .transition(ctx.trans)
         .attr("x1", d => d.parent.x)
         .attr("x2", d => d.x)
         .attr("y1", d => d.parent.y)
-        .attr("y2", d => d.y)
-        .attr("stroke", "purple");
+        .attr("y2", d => d.y);
 
     edges
         .exit()
@@ -66,33 +70,43 @@ function drawEdges(viz, descendants) {
 }
 
 
-function draw(viz, hierData, layout) {
-    const root = layout(hierData);
+function draw(ctx, data) {
+    const root = ctx.layout(data || ctx.hierData);
     const descendants = root.descendants();
-    drawEdges(viz, descendants);
-    drawNodes(viz, descendants);
-    console.log({descendants, root})
+    drawEdges(ctx, descendants);
+    drawNodes(ctx, descendants);
 }
 
 
-function focus(d) {
-    const descendants = d.descendants();
-    draw(g, d);
+function focus(d, ctx) {
+    delete d.data.parentId;
+    const descendants = d3.stratify()(d.descendants().map(d => d.data));
+    draw(ctx, descendants);
 }
 
 
-function boot(layout) {
-    const rawData = testData;
+function boot(rawData) {
     const hierData = d3.stratify()(rawData);
 
+    const layout = d3
+        .tree()
+        .size([500, 400]);
+
+    const trans = d3
+        .transition()
+        .duration(200)
+        .ease(d3.easeLinear);
+
     const g = setupSvg();
-    draw(g, hierData, layout);
-    return g;
+    const ctx = {
+        viz: g,
+        trans,
+        layout,
+        hierData
+    };
+
+    draw(ctx);
 }
 
 
-const treeLayout = d3
-    .tree()
-    .size([500, 400]);
-
-const g = boot(treeLayout);
+boot(testData);
