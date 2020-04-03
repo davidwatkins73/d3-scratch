@@ -20,7 +20,7 @@ function drawNodes(ctx, data) {
     const nodes = ctx
         .viz
         .selectAll(".node")
-        .data(data);
+        .data(data, d => d.id);
 
     const newNodes = nodes
         .enter()
@@ -50,7 +50,7 @@ function drawEdges(ctx, data) {
     const edges = ctx
         .viz
         .selectAll(".edge")
-        .data(data.filter(d => d.parent !== null));
+        .data(data.filter(d => d.parent !== null), d => d.id);
 
     const newEdges = edges
         .enter()
@@ -86,7 +86,7 @@ function draw(ctx, data) {
 
 function focus(d, ctx) {
     delete d.data.parentId;
-    const descendants = d3.stratify()(d.descendants().map(d => d.data));
+    const descendants = d3.stratify()(d.descendants().map(d => Object.assign({}, d.data)));
     draw(ctx, descendants);
 }
 
