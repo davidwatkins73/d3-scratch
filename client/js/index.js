@@ -3,16 +3,18 @@ import * as d3 from "d3";
 import testData from "./testData";
 
 
-function setupSvg() {
+function setupSvg(dimensions) {
     const svg = d3
         .select("#viz")
         .append("svg")
-        .attr("width", "600px")
-        .attr("height", "600px");
+        .attr("width", `${dimensions.w + dimensions.margin * 2}px`)
+        .attr("height", `${dimensions.h + dimensions.margin * 2}px`);
+
+    const m = dimensions.margin;
 
     return svg
         .append("g")
-        .attr("transform", "translate(50 50)");
+        .attr("transform", `translate(${m} ${m})`);
 }
 
 
@@ -26,8 +28,8 @@ function drawNodes(ctx, data) {
         .enter()
         .append("circle")
         .classed("node", true)
-        .attr("cx", 200)
-        .attr("cy", 200)
+        .attr("cx", ctx.dimensions.h / 2)
+        .attr("cy", ctx.dimensions.w / 2)
         .attr("r", 1);
 
     nodes
@@ -80,7 +82,6 @@ function draw(ctx) {
     const root = ctx.layout(ctx.working.copy()).sum(d => d.count);
     ctx.nodeScale.domain([0, root.value]);
     const descendants = root.descendants();
-    console.log({root, descendants, ctx})
     drawEdges(ctx, descendants);
     drawNodes(ctx, descendants);
 }
@@ -97,9 +98,15 @@ function focus(d, ctx) {
 function boot(rawData) {
     const hierData = d3.stratify()(rawData);
 
+    const dimensions = {
+        w: 600,
+        h: 500,
+        margin: 50,
+    };
+
     const layout = d3
         .tree()
-        .size([500, 400]);
+        .size([dimensions.h, dimensions.w]);
 
     const nodeScale = d3
         .scalePow()
@@ -107,7 +114,8 @@ function boot(rawData) {
         .range([3, 20]);
 
     const ctx = {
-        viz: setupSvg(),
+        dimensions,
+        viz: setupSvg(dimensions),
         trans: d3
             .transition()
             .duration(200)
