@@ -19,7 +19,14 @@ const complexData = `
         bc 
             bca 
             bcb 
+                bcba 
+                bcbb 
+                    bcbba 
             bcc 
+            bcd 
+            bce 
+            bcf 
+            bcg 
         bd
     c 
         ca 
@@ -131,10 +138,11 @@ function mkData(dataStr) {
                 return {
                     id,
                     parentId: pId,
+                    count: Math.floor(Math.random() * 10),
                     name: atom
                 };
             }));
 }
 
 
-export default mkData(simpleData);
+export default mkData(complexData);

@@ -20,7 +20,7 @@ function drawNodes(ctx, data) {
     const nodes = ctx
         .viz
         .selectAll(".node")
-        .data(data, d => d.id);
+        .data(data, d => d.data.id);
 
     const newNodes = nodes
         .enter()
@@ -32,13 +32,13 @@ function drawNodes(ctx, data) {
 
     nodes
         .merge(newNodes)
-        .attr("r", d => Math.max(8 - d.depth, 2))
         .attr("stroke", "red")
         .attr("fill", "pink")
         .on("click", d => focus(d, ctx))
         .transition(ctx.trans)
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
+        .attr("r", d => ctx.nodeScale(d.value))
+        .attr("cy", d => d.x)
+        .attr("cx", d => d.y);
 
     nodes
         .exit()
@@ -50,7 +50,7 @@ function drawEdges(ctx, data) {
     const edges = ctx
         .viz
         .selectAll(".edge")
-        .data(data.filter(d => d.parent !== null), d => d.id);
+        .data(data.filter(d => d.parent !== null), d => d.data.id);
 
     const newEdges = edges
         .enter()
@@ -65,10 +65,10 @@ function drawEdges(ctx, data) {
         .merge(newEdges)
         .attr("stroke", "purple")
         .transition(ctx.trans)
-        .attr("x1", d => d.parent.x)
-        .attr("x2", d => d.x)
-        .attr("y1", d => d.parent.y)
-        .attr("y2", d => d.y);
+        .attr("y1", d => d.parent.x)
+        .attr("y2", d => d.x)
+        .attr("x1", d => d.parent.y)
+        .attr("x2", d => d.y);
 
     edges
         .exit()
@@ -77,26 +77,34 @@ function drawEdges(ctx, data) {
 
 
 function draw(ctx) {
-    const root = ctx.layout(ctx.hierData);
-    console.log("draw", ctx)
+    const root = ctx.layout(ctx.working.copy()).sum(d => d.count);
+    ctx.nodeScale.domain([0, root.value]);
     const descendants = root.descendants();
+    console.log({root, descendants, ctx})
     drawEdges(ctx, descendants);
     drawNodes(ctx, descendants);
 }
 
 
 function focus(d, ctx) {
-    ctx.hierData.descendants().forEach(d => d.visible = false);
-    d.descendants().forEach(d => d.data.visible = true);
+    d._parent = d.parent;
+    d.parent = null;
+    ctx.working = d;
     draw(ctx);
 }
 
 
 function boot(rawData) {
     const hierData = d3.stratify()(rawData);
+
     const layout = d3
         .tree()
         .size([500, 400]);
+
+    const nodeScale = d3
+        .scalePow()
+        .domain([0, 10])
+        .range([3, 20]);
 
     const ctx = {
         viz: setupSvg(),
@@ -105,11 +113,15 @@ function boot(rawData) {
             .duration(200)
             .ease(d3.easeLinear),
         layout,
-        hierData
+        nodeScale,
+        hierData,
+        working: hierData.copy()
     };
 
+    global.ctx = ctx;
     draw(ctx);
 }
+
 
 
 boot(testData);
