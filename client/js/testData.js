@@ -23,7 +23,18 @@ const complexData = `
                 bcbb 
                     bcbba 
             bcc 
-            bcd 
+            bcd
+                bcda
+                bcdb 
+                bcdc 
+                    bcdca 
+                    bcdcb 
+                        bcdcba 
+                        bcdcbb 
+                        bcdcbc 
+                    bcdcc 
+                    bcdcd 
+                bcdd 
             bce 
             bcf 
             bcg 
