@@ -1,6 +1,7 @@
 import '../styles/index.scss';
 import * as d3 from "d3";
 import testData from "./testData";
+import {mkName} from "./names";
 
 
 function setupSvg(dimensions) {
@@ -130,6 +131,7 @@ function boot(rawData) {
     draw(ctx);
 }
 
+console.log(mkName(2))
 
 
 boot(testData);

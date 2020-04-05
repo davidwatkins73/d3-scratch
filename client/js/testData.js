@@ -1,3 +1,5 @@
+import {mkName} from "./names";
+
 const simpleData = `
     a 
         aa 
@@ -161,7 +163,7 @@ function mkData(dataStr) {
                     id,
                     parentId: pId,
                     count: Math.floor(Math.random() * 10),
-                    name: atom
+                    name: mkName(2) + " " + atom
                 };
             }));
 }
