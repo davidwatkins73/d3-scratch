@@ -4,7 +4,7 @@
 - [x] Animation
 - [x] Weighted nodes
 - [ ] Weighted branches
-- [ ] Labels
+- [x] Labels
 - [ ] Navigate upwards
 - [ ] Search
 - [ ] Windowing [i.e. truncate after depth `n`]

@@ -148,22 +148,23 @@ function getParentId(idMap = {}, d = "") {
 }
 
 function mkData(dataStr) {
-    const atoms = dataStr.split(/\s+/).filter(atom => atom !== "");
+    const codes = dataStr.split(/\s+/).filter(code => code !== "");
 
     let id = 1;
     const idMap = {root: 0};
-    atoms.forEach(d => idMap[d] = id++);
+    codes.forEach(d => idMap[d] = id++);
 
     return [{id: 0, name: "Root"}]
-        .concat(atoms
-            .map(atom => {
-                const id = idMap[atom];
-                const pId = getParentId(idMap, atom) || 0;
+        .concat(codes
+            .map(code => {
+                const id = idMap[code];
+                const pId = getParentId(idMap, code) || 0;
                 return {
                     id,
+                    code,
                     parentId: pId,
                     count: Math.floor(Math.random() * 10),
-                    name: mkName(2) + " " + atom
+                    name: mkName(2)
                 };
             }));
 }

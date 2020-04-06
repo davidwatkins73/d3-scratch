@@ -27,21 +27,39 @@ function drawNodes(ctx, data) {
 
     const newNodes = nodes
         .enter()
-        .append("circle")
+        .append("g")
         .classed("node", true)
-        .attr("cx", ctx.dimensions.h / 2)
-        .attr("cy", ctx.dimensions.w / 2)
-        .attr("r", 1);
+        .style("cursor", "pointer")
+        .on("click", d => focus(d, ctx));
 
-    nodes
-        .merge(newNodes)
+
+    newNodes
+        .append("text")
+        .attr("fill", "black")
+        .attr("font-size", `${ctx.fontSize}px`)
+        .text(d => d.data.name);
+
+    newNodes
+        .append("circle")
         .attr("stroke", "red")
         .attr("fill", "pink")
-        .on("click", d => focus(d, ctx))
+        .attr("r", 1)
+
+    const allNodes = nodes
+        .merge(newNodes)
         .transition(ctx.trans)
-        .attr("r", d => ctx.nodeScale(d.value))
-        .attr("cy", d => d.x)
-        .attr("cx", d => d.y);
+        .attr("transform", d => `translate(${d.y} ${d.x})`);
+
+    allNodes
+        .selectAll("circle")
+        .transition(ctx.trans)
+        .attr("r", d => ctx.nodeScale(d.value));
+
+    allNodes
+        .selectAll("text")
+        .transition(ctx.trans)
+        .attr("dx", d => ctx.nodeScale(d.value) + 2)
+        .attr("dy", ctx.fontSize / 2.2);
 
     nodes
         .exit()
@@ -66,7 +84,7 @@ function drawEdges(ctx, data) {
 
     edges
         .merge(newEdges)
-        .attr("stroke", "purple")
+        .attr("stroke", "#ccc")
         .transition(ctx.trans)
         .attr("y1", d => d.parent.x)
         .attr("y2", d => d.x)
@@ -121,6 +139,7 @@ function boot(rawData) {
             .transition()
             .duration(200)
             .ease(d3.easeLinear),
+        fontSize: 8,
         layout,
         nodeScale,
         hierData,
@@ -130,8 +149,5 @@ function boot(rawData) {
     global.ctx = ctx;
     draw(ctx);
 }
-
-console.log(mkName(2))
-
 
 boot(testData);
