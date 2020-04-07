@@ -138,6 +138,35 @@ const complexData = `
             fbc
                 fbca
                 fbcb
+    g
+    h
+    i
+    j
+    k
+    l
+    m
+    n
+    o
+    p
+    q
+    r
+        ra
+        rb
+        rc
+            rca
+            rcb
+            rcc
+            rcd
+            rce
+    s
+    t
+    u
+    v
+    w
+    x
+    y
+    z
+    
 `;
 
 
@@ -166,7 +195,8 @@ function mkData(dataStr) {
                     count: Math.floor(Math.random() * 10),
                     name: mkName(2)
                 };
-            }));
+            }))
+        .sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 }
 
 

@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "d3": "^5.15.0",
+    "d3-array": "^2.4.0",
+    "d3-ease": "^1.0.6",
     "d3-hierarchy": "^1.1.9",
     "d3-random": "^2.1.0",
     "d3-scale": "^3.2.1",
