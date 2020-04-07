@@ -11,4 +11,5 @@
 - [ ] Windowing [i.e. truncate after depth `n`]
 - [ ] Bookmarks
 - [ ] Colouring (e.g. ratings)
-- [ ] flipping direction (horiz/vert)
+- [x] flipping direction (horiz/vert)
+- [ ] switch to treemap

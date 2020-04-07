@@ -174,7 +174,7 @@ function boot(rawData) {
         hierData,
         mkTransition: () => d3
             .transition()
-            .duration(300)
+            .duration(400)
             .ease(d3.easeCubicInOut),
         tweaker: TWEAKERS.leftRight,
         working: hierData.copy()
