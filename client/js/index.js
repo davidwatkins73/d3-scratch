@@ -59,7 +59,7 @@ function drawNodes(ctx, data) {
         .append("g")
         .classed("node", true)
         .style("cursor", "pointer")
-        .attr("transform", d => ctx.tweaker.node.mkInitialTransform(ctx))
+        .attr("transform", ctx.tweaker.node.mkInitialTransform(ctx))
         .on("click", d => focus(d, ctx));
 
     newNodes
