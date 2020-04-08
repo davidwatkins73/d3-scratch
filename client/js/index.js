@@ -84,11 +84,13 @@ function drawNodes(ctx, data) {
         .transition(ctx.mkTransition())
         .attr("r", d => ctx.nodeScale(d.value));
 
-
     allNodes
         .selectAll("text")
         .transition(ctx.mkTransition())
         .call(ctx.tweaker.label, ctx);
+
+
+    // -- exits
 
     nodes
         .exit()
@@ -156,7 +158,7 @@ function draw(ctx) {
         .sum(d => d.count || 0)
         ;
 
-    ctx.nodeScale.domain([0, root.value]);
+    ctx.nodeScale.domain([1, root.value]);
     ctx.edgeScale.domain([0, 10]);
 
     const descendants = root.descendants();
@@ -198,9 +200,9 @@ function boot(rawData) {
         .size([dimensions.w, dimensions.h]);
 
     const nodeScale = d3
-        .scalePow()
-        .domain([0, 10])
-        .range([3, 15])
+        .scaleLog()
+        .domain([1, 20])
+        .range([2, 10])
         .clamp(true);
 
     const edgeScale = d3
