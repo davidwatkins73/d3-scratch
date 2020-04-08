@@ -34,15 +34,21 @@ function setupSvg(dimensions) {
         .attr("width", `${dimensions.w + dimensions.margin * 2}px`)
         .attr("height", `${dimensions.h + dimensions.margin * 2}px`);
 
-    return svg
+    const g = svg
         .append("g")
         .attr("transform", `translate(${dimensions.margin} ${dimensions.margin})`);
+
+    g.append("g").classed("edges", true);
+    g.append("g").classed("nodes", true);
+
+    return g;
 }
 
 
 function drawNodes(ctx, data) {
     const nodes = ctx
         .viz
+        .select(".nodes")
         .selectAll(".node")
         .data(data, d => d.data.id);
 
@@ -83,6 +89,19 @@ function drawNodes(ctx, data) {
 
     nodes
         .exit()
+        .selectAll("circle")
+        .transition(ctx.mkTransition(100))
+        .attr("r", 0)
+
+    nodes
+        .exit()
+        .selectAll("text")
+        .transition(ctx.mkTransition(100))
+        .attr("stroke", "white")
+
+    nodes
+        .exit()
+        .transition(ctx.mkTransition(100))
         .remove();
 }
 
@@ -90,6 +109,7 @@ function drawNodes(ctx, data) {
 function drawEdges(ctx, data) {
     const edges = ctx
         .viz
+        .select(".edges")
         .selectAll(".edge")
         .data(data.filter(d => d.parent !== null), d => d.data.id);
 
@@ -119,8 +139,17 @@ function drawEdges(ctx, data) {
 
 
 function draw(ctx) {
+
+    const workingCopy = ctx.working.copy();
+
+    workingCopy.each(d => {
+        if (d.depth > ctx.maxDepth) {
+            disableChildren(d);
+        }
+    });
+
     const root = ctx
-        .layout(ctx.working.copy())
+        .layout(workingCopy)
         .sum(d => d.count || 0)
         ;
 
@@ -133,12 +162,24 @@ function draw(ctx) {
 }
 
 
-function focus(d, ctx) {
+function disableParent(d) {
     d._parent = d.parent;
     d.parent = null;
+}
+
+
+function disableChildren(d) {
+    d._children = d.children;
+    d.children = null;
+}
+
+
+function focus(d, ctx) {
+    disableParent(d);
     ctx.working = d;
     draw(ctx);
 }
+
 
 function boot(rawData) {
     const hierData = d3.stratify()(rawData);
@@ -156,7 +197,8 @@ function boot(rawData) {
     const nodeScale = d3
         .scalePow()
         .domain([0, 10])
-        .range([3, 20]);
+        .range([3, 15])
+        .clamp(true);
 
     const edgeScale = d3
         .scalePow()
@@ -168,13 +210,14 @@ function boot(rawData) {
         dimensions,
         viz: setupSvg(dimensions),
         fontSize: 8,
+        maxDepth: 3,
         layout,
         nodeScale,
         edgeScale,
         hierData,
-        mkTransition: () => d3
+        mkTransition: (speed = 400) => d3
             .transition()
-            .duration(400)
+            .duration(speed)
             .ease(d3.easeCubicInOut),
         tweaker: TWEAKERS.leftRight,
         working: hierData.copy()
@@ -184,7 +227,11 @@ function boot(rawData) {
     draw(ctx);
 }
 
+
 boot(testData);
+
+
+// --- interact
 
 function swap() {
     global.ctx.tweaker = global.ctx.tweaker === TWEAKERS.leftRight
@@ -194,4 +241,11 @@ function swap() {
     draw(global.ctx);
 }
 
+
+function changeMaxDepth(amount = 1) {
+    global.ctx.maxDepth = global.ctx.maxDepth + amount;
+    draw(global.ctx);
+}
+
+global.changeMaxDepth = changeMaxDepth;
 global.swap = swap;
