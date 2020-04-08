@@ -7,7 +7,8 @@ const TWEAKERS = {
     topDown: {
         node: {
             x: d => d.x,
-            y: d => d.y
+            y: d => d.y,
+            mkInitialTransform: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "middle")
@@ -17,7 +18,8 @@ const TWEAKERS = {
     leftRight: {
         node: {
             x: d => d.y,
-            y: d => d.x
+            y: d => d.x,
+            mkInitialTransform: (ctx) => `translate(${ctx.dimensions.w / 1.2} ${ctx.dimensions.h / 2})`
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "left")
@@ -57,6 +59,7 @@ function drawNodes(ctx, data) {
         .append("g")
         .classed("node", true)
         .style("cursor", "pointer")
+        .attr("transform", d => ctx.tweaker.node.mkInitialTransform(ctx))
         .on("click", d => focus(d, ctx));
 
     newNodes
