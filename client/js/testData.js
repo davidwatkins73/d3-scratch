@@ -4,10 +4,18 @@ const simpleData = `
     a 
         aa 
             aaa
+                aaaa
+                aaaaa
+                aaaaaa
+                aaaaaaa
+                aaaaaaaa
+                    aaaaaaaaa
+                    aaaaaaaab
+                    aaaaaaaac
         ab 
             aba 
             abb
-        ac`;
+                abba`;
 
 const complexData = `
     a 

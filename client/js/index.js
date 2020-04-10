@@ -60,13 +60,14 @@ function drawNodes(ctx, data) {
         .classed("node", true)
         .style("cursor", "pointer")
         .attr("transform", ctx.tweaker.node.mkInitialTransform(ctx))
+        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d))
         .on("click", d => focus(d, ctx));
 
     newNodes
         .append("text")
+        .text(d => d.data.code)
         .attr("fill", "black")
         .attr("font-size", `${ctx.fontSize}px`)
-        .text(d => d.data.name);
 
     newNodes
         .append("circle")
@@ -81,6 +82,7 @@ function drawNodes(ctx, data) {
 
     allNodes
         .selectAll("circle")
+        .attr("fill", d => d.data._children ? "red" : "pink")
         .transition(ctx.mkTransition())
         .attr("r", d => ctx.nodeScale(d.value));
 
@@ -88,7 +90,6 @@ function drawNodes(ctx, data) {
         .selectAll("text")
         .transition(ctx.mkTransition())
         .call(ctx.tweaker.label, ctx);
-
 
     // -- exits
 
@@ -131,7 +132,7 @@ function drawEdges(ctx, data) {
         .merge(newEdges)
         .attr("stroke", "#e5e5e5")
         .transition(ctx.mkTransition())
-        .attr("stroke-width", d => ctx.edgeScale(d.value))
+        .attr("stroke-width", 1)
         .attr("y1", d => ctx.tweaker.node.y(d.parent))
         .attr("y2", d => ctx.tweaker.node.y(d))
         .attr("x1", d => ctx.tweaker.node.x(d.parent))
@@ -142,24 +143,17 @@ function drawEdges(ctx, data) {
         .remove();
 }
 
+function nodeTitle(d) {
+    return d.data.code || d.data.name
+}
 
 function draw(ctx) {
-
-    const workingCopy = ctx.working.copy();
-
-    workingCopy.each(d => {
-        if (d.depth > ctx.maxDepth) {
-            disableChildren(d);
-        }
-    });
-
+    console.log(`-------------[${nodeTitle(ctx.working)}]`);
     const root = ctx
-        .layout(workingCopy)
-        .sum(d => d.count || 0)
-        ;
+        .layout(ctx.working)
+        .sum(d => d.count || 0);
 
     ctx.nodeScale.domain([1, root.value]);
-    ctx.edgeScale.domain([0, 10]);
 
     const descendants = root.descendants();
     drawEdges(ctx, descendants);
@@ -168,20 +162,64 @@ function draw(ctx) {
 
 
 function disableParent(d) {
-    d._parent = d.parent;
-    d.parent = null;
+    console.log("dp", {d})
+    if (d.parent) {
+        d.data._parent = d.parent;
+        d.parent = null;
+    }
+
 }
 
 
 function disableChildren(d) {
-    d._children = d.children;
-    d.children = null;
+    d.data._children = d.children;
+    delete d.children;
+}
+
+
+function enableChildren(d) {
+    if (d.data._children) {
+        d.children = d.data._children;
+        delete d.data._children;
+    }
+}
+
+
+function clipTree(ctx) {
+    // return clipTreeNew(ctx);
+    return clipTreeOld(ctx);
+}
+
+
+function clipTreeNew(ctx) {
+    if (!ctx) {
+        log.warn("no ctx");
+        return;
+    }
+}
+
+function clipTreeOld(ctx) {
+    const fn = (ctx) => {
+        ctx.working = ctx.working.copy().eachBefore(d => {
+            if (d.parent) {
+                d.depth = d.parent.depth + 1;
+            }
+            enableChildren(d);
+            if (d.depth > ctx.maxDepth) {
+                disableChildren(d)
+            }
+        });
+        return ctx;
+    };
+    return fn(fn(fn(fn(fn(ctx)))));
 }
 
 
 function focus(d, ctx) {
-    disableParent(d);
+    d.ancestors().forEach(p => disableParent(p))
+    // disableParent(d);
     ctx.working = d;
+    clipTree(ctx);
     draw(ctx);
 }
 
@@ -205,31 +243,25 @@ function boot(rawData) {
         .range([2, 10])
         .clamp(true);
 
-    const edgeScale = d3
-        .scalePow()
-        .range([1, 3])
-        .clamp(true);
-
     const ctx = {
         d3,
         dimensions,
         viz: setupSvg(dimensions),
         fontSize: 8,
-        maxDepth: 3,
+        maxDepth: 2,
         layout,
         nodeScale,
-        edgeScale,
         hierData,
         mkTransition: (speed = 400) => d3
             .transition()
             .duration(speed)
             .ease(d3.easeCubicInOut),
         tweaker: TWEAKERS.leftRight,
-        working: hierData.copy()
+        working: hierData
     };
 
+    draw(clipTree(ctx));
     global.ctx = ctx;
-    draw(ctx);
 }
 
 
@@ -249,8 +281,29 @@ function swap() {
 
 function changeMaxDepth(amount = 1) {
     global.ctx.maxDepth = global.ctx.maxDepth + amount;
-    draw(global.ctx);
+    draw(clipTree(ctx));
+}
+
+
+function reset() {
+    global.ctx.maxDepth = 3;
+    global.ctx.working = ctx.hierData;
+    draw(clipTree(global.ctx))
+}
+
+
+function goUp() {
+    const w = global.ctx.working;
+    console.log("group", {w, wp: w.parent, w_p: w.data._parent})
+    if (w.data._parent) {
+        w.parent = w.data._parent;
+        global.ctx.working = w.parent;
+        //delete w._parent;
+        draw(clipTree(global.ctx));
+    }
 }
 
 global.changeMaxDepth = changeMaxDepth;
 global.swap = swap;
+global.reset = reset;
+global.goUp = goUp;
