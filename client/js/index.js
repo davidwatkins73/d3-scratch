@@ -1,26 +1,50 @@
 import '../styles/index.scss';
-import * as d3 from "d3";
 
 
 console.log('webpack starterkit');
+let shouldStop = false;
+let stopped = false;
+const downloadLink = document.getElementById('download');
+const stopButton = document.getElementById('stop');
 
-console.log(d3)
+stopButton.addEventListener('click', function() {
+    console.log("stop")
+    shouldStop = true;
+});
 
+const handleSuccess = function(stream) {
+    console.log("handle success", stream)
+    const options = {mimeType: 'audio/webm'};
+    const recordedChunks = [];
+    const mediaRecorder = new MediaRecorder(stream, options);
 
-const svg = d3
-    .select("#viz")
-    .append("svg");
+    mediaRecorder
+        .addEventListener('dataavailable', (e) => {
+            console.log("added listener")
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+                console.log("push")
+            }
 
+            if(shouldStop === true && stopped === false) {
+                mediaRecorder.stop();
+                console.log("stopped")
+                stopped = true;
+            }
+        });
 
-const data = [10, 40, 34, 10, 9];
+    mediaRecorder
+        .addEventListener('stop', function() {
+            console.log('recorder stop')
+            downloadLink.href = URL.createObjectURL(new Blob(recordedChunks));
+            downloadLink.download = 'acetest.wav';
+        });
 
+    console.log("starting")
+    mediaRecorder.start();
+    console.log("started")
+};
 
-svg.selectAll("circle")
-    .data(data)
-    .enter()
-    .append("circle")
-    .attr("r", d => d / 2)
-    .attr("cx", (d, i) => (i + 1)  * 30)
-    .attr("cy", 100)
-    .attr("stroke", "red")
-    .attr("fill", "pink");
+navigator.mediaDevices
+    .getUserMedia({ audio: true, video: false })
+    .then(handleSuccess);
