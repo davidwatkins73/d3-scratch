@@ -63,7 +63,6 @@ if (navigator.mediaDevices.getUserMedia) {
             const playButton = document.createElement('button');
 
             clipContainer.classList.add('clip');
-            audio.setAttribute('controls', '');
             deleteButton.textContent = 'Delete';
             deleteButton.className = 'delete';
             playButton.textContent = 'Play Now';
@@ -74,28 +73,34 @@ if (navigator.mediaDevices.getUserMedia) {
                 clipLabel.textContent = clipName;
             }
 
+
+            const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+            chunks = [];
+
+            const audioURL = window.URL.createObjectURL(blob);
+            audio.setAttribute('controls', '');
+            audio.controls = true;
+            audio.src = audioURL;
+
             clipContainer.appendChild(audio);
             clipContainer.appendChild(clipLabel);
             clipContainer.appendChild(deleteButton);
             clipContainer.appendChild(playButton);
             soundClips.appendChild(clipContainer);
 
-            audio.controls = true;
-            const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
-            chunks = [];
-            const audioURL = window.URL.createObjectURL(blob);
-            audio.src = audioURL;
             console.log("recorder stopped");
 
             playButton.onclick = () => {
                 new Audio(audioURL).play();
-            }
-            deleteButton.onclick = function(e) {
+
+            };
+
+            deleteButton.onclick = (e) => {
                 let evtTgt = e.target;
                 evtTgt.parentNode.parentNode.removeChild(evtTgt.parentNode);
-            }
+            };
 
-            clipLabel.onclick = function() {
+            clipLabel.onclick = () => {
                 const existingName = clipLabel.textContent;
                 const newClipName = prompt('Enter a new name for your sound clip?');
                 if(newClipName === null) {
@@ -103,7 +108,7 @@ if (navigator.mediaDevices.getUserMedia) {
                 } else {
                     clipLabel.textContent = newClipName;
                 }
-            }
+            };
         }
 
         mediaRecorder.ondataavailable = function(e) {
@@ -111,7 +116,7 @@ if (navigator.mediaDevices.getUserMedia) {
         }
     }
 
-    let onError = function(err) {
+    let onError = (err) => {
         console.log('The following error occured: ' + err);
     }
 
