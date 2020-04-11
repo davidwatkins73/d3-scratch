@@ -60,11 +60,13 @@ if (navigator.mediaDevices.getUserMedia) {
             const clipLabel = document.createElement('p');
             const audio = document.createElement('audio');
             const deleteButton = document.createElement('button');
+            const playButton = document.createElement('button');
 
             clipContainer.classList.add('clip');
             audio.setAttribute('controls', '');
             deleteButton.textContent = 'Delete';
             deleteButton.className = 'delete';
+            playButton.textContent = 'Play Now';
 
             if(clipName === null) {
                 clipLabel.textContent = 'My unnamed clip';
@@ -75,6 +77,7 @@ if (navigator.mediaDevices.getUserMedia) {
             clipContainer.appendChild(audio);
             clipContainer.appendChild(clipLabel);
             clipContainer.appendChild(deleteButton);
+            clipContainer.appendChild(playButton);
             soundClips.appendChild(clipContainer);
 
             audio.controls = true;
@@ -84,6 +87,9 @@ if (navigator.mediaDevices.getUserMedia) {
             audio.src = audioURL;
             console.log("recorder stopped");
 
+            playButton.onclick = () => {
+                new Audio(audioURL).play();
+            }
             deleteButton.onclick = function(e) {
                 let evtTgt = e.target;
                 evtTgt.parentNode.parentNode.removeChild(evtTgt.parentNode);
