@@ -8,7 +8,10 @@ const TWEAKERS = {
         node: {
             x: d => d.x,
             y: d => d.y,
-            mkInitialTransform: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`
+            initialTransforms: {
+                ASCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`,
+                DESCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`
+            }
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "middle")
@@ -19,7 +22,10 @@ const TWEAKERS = {
         node: {
             x: d => d.y,
             y: d => d.x,
-            mkInitialTransform: (ctx) => `translate(${ctx.dimensions.w / 1.2} ${ctx.dimensions.h / 2})`
+            initialTransforms: {
+                ASCEND: (ctx) => `translate(${ctx.dimensions.margin/2 * -1} ${ctx.dimensions.h / 2})`,
+                DESCEND: (ctx) => `translate(${ctx.dimensions.w + ctx.dimensions.margin/2} ${ctx.dimensions.h / 2})`
+            }
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "left")
@@ -59,20 +65,20 @@ function drawNodes(ctx, data) {
         .append("g")
         .classed("node", true)
         .style("cursor", "pointer")
-        .attr("transform", ctx.tweaker.node.mkInitialTransform(ctx))
+        .attr("transform", ctx.tweaker.node.initialTransforms[ctx.direction](ctx))
         .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d))
         .on("click", d => focus(d, ctx));
 
     newNodes
         .append("text")
-        .text(d => d.data.code)
+        .text(d => d.data.name)
         .attr("fill", "black")
         .attr("font-size", `${ctx.fontSize}px`)
 
     newNodes
         .append("circle")
-        .attr("stroke", "red")
-        .attr("fill", "pink")
+        .attr("stroke", "#56aa9f")
+        .attr("fill", "#cbf7f2")
         .attr("r", 1);
 
     const allNodes = nodes
@@ -82,7 +88,12 @@ function drawNodes(ctx, data) {
 
     allNodes
         .selectAll("circle")
-        .attr("fill", d => d.data._children ? "red" : "pink")
+        .attr("fill", d => {
+            if (d.data._parent) { return "#8efabd"; }
+            else if (d.data._children) { return "#8efabd"; }
+            else if (d.children) { return "#b1d9f2" }
+            else { return "#d8e8f8"; }
+        })
         .transition(ctx.mkTransition())
         .attr("r", d => ctx.nodeScale(d.value));
 
@@ -112,17 +123,27 @@ function drawNodes(ctx, data) {
 }
 
 
+function mkEdgeId(d) {
+    return d.data.parentId + "_" + d.data.id;
+}
+
+
 function drawEdges(ctx, data) {
     const edges = ctx
         .viz
         .select(".edges")
         .selectAll(".edge")
-        .data(data.filter(d => d.parent !== null), d => d.data.id);
+        .data(data.filter(d => d.parent), d => mkEdgeId(d));
+
+    edges
+        .exit()
+        .remove();
 
     const newEdges = edges
         .enter()
         .append("line")
         .classed("edge", true)
+        .attr("data-edge-id", mkEdgeId)
         .attr("x1", 200)
         .attr("x2", 200)
         .attr("y1", 200)
@@ -133,22 +154,19 @@ function drawEdges(ctx, data) {
         .attr("stroke", "#e5e5e5")
         .transition(ctx.mkTransition())
         .attr("stroke-width", 1)
+        .attr("x1", d => ctx.tweaker.node.x(d.parent))
+        .attr("x2", d => ctx.tweaker.node.x(d))
         .attr("y1", d => ctx.tweaker.node.y(d.parent))
         .attr("y2", d => ctx.tweaker.node.y(d))
-        .attr("x1", d => ctx.tweaker.node.x(d.parent))
-        .attr("x2", d => ctx.tweaker.node.x(d));
-
-    edges
-        .exit()
-        .remove();
 }
+
 
 function nodeTitle(d) {
     return d.data.code || d.data.name
 }
 
+
 function draw(ctx) {
-    console.log(`-------------[${nodeTitle(ctx.working)}]`);
     const root = ctx
         .layout(ctx.working)
         .sum(d => d.count || 0);
@@ -161,19 +179,70 @@ function draw(ctx) {
 }
 
 
+function clipTree(ctx) {
+    const w = ctx.working;
+
+    w.ancestors().forEach(p => disableParent(p))
+
+    const visit = (xs, curDepth = 0) => {
+        xs.forEach(x => {
+            x.depth = curDepth;
+            if (curDepth >= ctx.maxDepth) {
+                disableChildren(x);
+            } else {
+                enableChildren(x);
+                visit(x.children || [], curDepth + 1);
+            }
+        })
+    };
+
+    visit([w]);
+
+    return ctx;
+}
+
+
+function focus(d, ctx) {
+    if (sameNode(d, ctx.working)) {
+        if (hasParents(d)) {
+            ctx.direction = "ASCEND";
+            goUp();
+        }
+    } else {
+        ctx.direction = "DESCEND";
+        ctx.working = disableParent(d);
+
+    }
+    clipTree(clipTree(ctx));
+    draw(ctx);
+}
+
+
+function hasParents(d) {
+    return d.parent || d.data._parent
+}
+
+
+function sameNode(a, b) {
+    return a.data.id === b.data.id;
+}
+
+
 function disableParent(d) {
-    console.log("dp", {d})
     if (d.parent) {
         d.data._parent = d.parent;
-        d.parent = null;
+        delete d.parent;
     }
-
+    return d;
 }
 
 
 function disableChildren(d) {
-    d.data._children = d.children;
-    delete d.children;
+    if (d.children) {
+        d.data._children = d.children;
+        delete d.children;
+    }
+    return d;
 }
 
 
@@ -182,46 +251,9 @@ function enableChildren(d) {
         d.children = d.data._children;
         delete d.data._children;
     }
+    return d;
 }
 
-
-function clipTree(ctx) {
-    // return clipTreeNew(ctx);
-    return clipTreeOld(ctx);
-}
-
-
-function clipTreeNew(ctx) {
-    if (!ctx) {
-        log.warn("no ctx");
-        return;
-    }
-}
-
-function clipTreeOld(ctx) {
-    const fn = (ctx) => {
-        ctx.working = ctx.working.copy().eachBefore(d => {
-            if (d.parent) {
-                d.depth = d.parent.depth + 1;
-            }
-            enableChildren(d);
-            if (d.depth > ctx.maxDepth) {
-                disableChildren(d)
-            }
-        });
-        return ctx;
-    };
-    return fn(fn(fn(fn(fn(ctx)))));
-}
-
-
-function focus(d, ctx) {
-    d.ancestors().forEach(p => disableParent(p))
-    // disableParent(d);
-    ctx.working = d;
-    clipTree(ctx);
-    draw(ctx);
-}
 
 
 function boot(rawData) {
@@ -248,7 +280,7 @@ function boot(rawData) {
         dimensions,
         viz: setupSvg(dimensions),
         fontSize: 8,
-        maxDepth: 2,
+        maxDepth: 4,
         layout,
         nodeScale,
         hierData,
@@ -257,7 +289,8 @@ function boot(rawData) {
             .duration(speed)
             .ease(d3.easeCubicInOut),
         tweaker: TWEAKERS.leftRight,
-        working: hierData
+        working: hierData,
+        direction: "DESCEND"
     };
 
     draw(clipTree(ctx));
@@ -294,11 +327,15 @@ function reset() {
 
 function goUp() {
     const w = global.ctx.working;
-    console.log("group", {w, wp: w.parent, w_p: w.data._parent})
+
+
     if (w.data._parent) {
         w.parent = w.data._parent;
+        delete w.data._parent;
+
+        global.ctx.direction = "ASCEND";
         global.ctx.working = w.parent;
-        //delete w._parent;
+
         draw(clipTree(global.ctx));
     }
 }
@@ -307,3 +344,4 @@ global.changeMaxDepth = changeMaxDepth;
 global.swap = swap;
 global.reset = reset;
 global.goUp = goUp;
+
