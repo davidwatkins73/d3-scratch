@@ -1,5 +1,7 @@
 // set up basic variables for app
 import "../styles/index.scss";
+import * as PIXI from "pixi.js";
+import bg from "../assets/stars.png"
 
 const record = document.querySelector('.record');
 const stop = document.querySelector('.stop');
@@ -82,6 +84,8 @@ if (navigator.mediaDevices.getUserMedia) {
             audio.controls = true;
             audio.src = audioURL;
 
+            console.log(`blob size: ${blob.size}`)
+
             clipContainer.appendChild(audio);
             clipContainer.appendChild(clipLabel);
             clipContainer.appendChild(deleteButton);
@@ -155,7 +159,9 @@ function visualize(stream) {
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
         canvasCtx.lineWidth = 2;
-        canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+        canvasCtx.strokeStyle = stop.disabled
+            ? 'rgb(128 128 128)'
+            : 'rgb(0, 0, 0)';
 
         canvasCtx.beginPath();
 
@@ -188,3 +194,21 @@ window.onresize = function() {
 }
 
 window.onresize();
+
+
+// The application will create a renderer using WebGL, if possible,
+// with a fallback to a canvas render. It will also setup the ticker
+// and the root stage PIXI.Container
+const app = new PIXI.Application();
+
+
+app.renderer.autoResize = true;
+document.body.appendChild(app.view);
+
+// create a new background sprite
+const background = PIXI.Sprite.from(bg);
+console.log(background)
+background.width = app.screen.width;
+background.height = app.screen.height;
+app.stage.addChild(background);
+
