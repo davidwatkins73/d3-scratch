@@ -15,7 +15,7 @@ const TWEAKERS = {
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "middle")
-            .attr("dy", (d, i) => ctx.nodeScale(d.value) + ctx.fontSize + 2)
+            .attr("dy", d => ctx.nodeScale(d.value) + ctx.fontSize + 2)
             .attr("dx", 0)
     },
     leftRight: {
@@ -30,7 +30,7 @@ const TWEAKERS = {
         label: (selection, ctx) => selection
             .attr("text-anchor", "left")
             .attr("dx", d => ctx.nodeScale(d.value) + 2)
-            .attr("dy", ctx.fontSize / 2.2)
+            .attr("dy", ctx.fontSize / 1.2)
     }
 };
 
@@ -129,11 +129,14 @@ function mkEdgeId(d) {
 
 
 function drawEdges(ctx, data) {
+    const edgeData = data
+        .filter(d => d.parent);
+
     const edges = ctx
         .viz
         .select(".edges")
         .selectAll(".edge")
-        .data(data.filter(d => d.parent), d => mkEdgeId(d));
+        .data(edgeData, d => mkEdgeId(d));
 
     edges
         .exit()
@@ -168,8 +171,7 @@ function nodeTitle(d) {
 
 function draw(ctx) {
     const root = ctx
-        .layout(ctx.working)
-        .sum(d => d.count || 0);
+        .layout(ctx.working);
 
     ctx.nodeScale.domain([1, root.value]);
 
@@ -182,22 +184,25 @@ function draw(ctx) {
 function clipTree(ctx) {
     const w = ctx.working;
 
-    w.ancestors().forEach(p => disableParent(p))
+    disableParent(w);
 
     const visit = (xs, curDepth = 0) => {
         xs.forEach(x => {
             x.depth = curDepth;
+            if (curDepth > 0) {
+                // repair parent links
+                enableParent(x);
+            }
             if (curDepth >= ctx.maxDepth) {
                 disableChildren(x);
             } else {
                 enableChildren(x);
                 visit(x.children || [], curDepth + 1);
             }
-        })
+        });
     };
 
     visit([w]);
-
     return ctx;
 }
 
@@ -211,9 +216,8 @@ function focus(d, ctx) {
     } else {
         ctx.direction = "DESCEND";
         ctx.working = disableParent(d);
-
     }
-    clipTree(clipTree(ctx));
+    clipTree(ctx);
     draw(ctx);
 }
 
@@ -255,9 +259,20 @@ function enableChildren(d) {
 }
 
 
+function enableParent(d) {
+    if (d.data._parent) {
+        d.parent = d.data._parent;
+        delete d.data._parent;
+    }
+    return d;
+}
+
+
 
 function boot(rawData) {
-    const hierData = d3.stratify()(rawData);
+    const hierData = d3
+        .stratify()(rawData)
+        .sum(d => d.count || 0);
 
     const dimensions = {
         w: 600,
@@ -304,11 +319,11 @@ boot(testData);
 // --- interact
 
 function swap() {
-    global.ctx.tweaker = global.ctx.tweaker === TWEAKERS.leftRight
-        ? TWEAKERS.topDown
-        : TWEAKERS.leftRight;
+        global.ctx.tweaker = global.ctx.tweaker === TWEAKERS.leftRight
+            ? TWEAKERS.topDown
+            : TWEAKERS.leftRight;
 
-    draw(global.ctx);
+        draw(global.ctx);
 }
 
 
