@@ -17,6 +17,100 @@ const simpleData = `
             abb
                 abba`;
 
+const wideData = `
+    a
+     aa
+     ab
+     ac
+     ad
+     ae
+     af
+     ag
+     ah
+    b
+     ba
+     bb
+     bc
+     bd
+     be
+     bf
+     bg
+     bh
+    c
+     ca
+     cb
+     cc
+     cd
+     ce
+     cf
+     cg
+     ch
+    d
+     da
+     db
+     dc
+     dd
+     de
+     df
+     dg
+     dh
+    e
+     ea
+     eb
+     ec
+     ed
+     ee
+     ef
+     eg
+     ah
+    f
+     fa
+     fb
+     fc
+     fd
+     fe
+     ff
+     fg
+     fh
+    g
+     ga
+     gb
+     gc
+     gd
+     ge
+     gf
+     gg
+     gh
+    h
+     ha
+     hb
+     hc
+     hd
+     he
+     hf
+     hg
+     hh
+    o
+     oa
+     ob
+     oc
+     od
+     oe
+     of
+     og
+     oh
+    p
+     pa
+     pb
+     pc
+     pd
+     pe
+     pf
+     pg
+     ph
+    
+           `;
+
 const complexData = `
     a 
         aa 
@@ -195,11 +289,11 @@ function mkData(dataStr) {
                     code,
                     parentId: pId,
                     count: Math.floor(Math.random() * 10),
-                    name: mkName(2)
+                    name: mkName(Math.ceil(Math.random() * 3))
                 };
             }))
         .sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 }
 
 
-export default mkData(complexData);
+export default mkData(wideData);

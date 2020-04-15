@@ -277,7 +277,7 @@ function boot(rawData) {
     const dimensions = {
         w: 600,
         h: 600,
-        margin: 50,
+        margin: 150,
     };
 
     const layout = d3
