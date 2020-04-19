@@ -46,8 +46,11 @@ function setupSvg(dimensions) {
         .append("g")
         .attr("transform", `translate(${dimensions.margin} ${dimensions.margin})`);
 
-    g.append("g").classed("edges", true);
-    g.append("g").classed("nodes", true);
+    const t =  g.append("g").classed("tree", true);
+    t.append("g").classed("edges", true);
+    t.append("g").classed("nodes", true);
+
+    g.append("g").classed("treemap", true)
 
     return g;
 }
@@ -164,9 +167,39 @@ function nodeTitle(d) {
 }
 
 
+function show(ctx, name) {
+    ctx.viz
+        .select(name)
+        .style("display", "");
+}
+
+
+function hide(ctx, name) {
+    ctx.viz
+        .select(name)
+        .style("display", "none");
+}
+
+
 function draw(ctx) {
+    switch (ctx.renderMode) {
+        case "TREE":
+            show(ctx,".tree");
+            hide(ctx,".treeMap")
+            return drawTree(ctx);
+        case "TREEMAP":
+            show(ctx,".treeMap");
+            hide(ctx,".tree")
+            return drawTreemap(ctx);
+        default:
+            throw `Unknown renderMode: ${ctx.renderMode}`;
+    }
+}
+
+
+function drawTree(ctx) {
     const root = ctx
-        .layout(ctx.working);
+        .treeLayout(ctx.working);
 
     ctx.nodeScale.domain([1, root.value]);
 
@@ -175,6 +208,67 @@ function draw(ctx) {
     drawNodes(ctx, descendants);
 }
 
+
+function drawTreemap(ctx) {
+    const root = ctx
+        .treemapLayout(ctx.working)
+
+    const descendants = root.descendants();
+
+    const nodes = ctx
+        .viz
+        .select(".treemap")
+        .selectAll(".block")
+        .data(descendants, d => d.data.id);
+
+    const newNodes = nodes
+        .enter()
+        .append("g")
+        .classed("block", true);
+
+    newNodes
+        .append("rect")
+
+    newNodes
+        .append("text")
+        .attr("fill", "black")
+        .text(d => d.data.name)
+
+    nodes
+        .merge(newNodes)
+        .selectAll("rect")
+        .attr("fill", "pink")
+        .attr("stroke", "red")
+        .attr("opacity", 0.2)
+        .on("click.focus", d => {
+            if (d.depth === 1) {
+                focus(d, ctx)
+            } else if (d.depth > 1) {
+                let ptr = d.parent;
+                while (ptr !== null) {
+                    if (ptr.depth === 1) {
+                        focus(ptr, ctx);
+                        break;
+                    }
+                    ptr = ptr.parent;
+                }
+            }
+        })
+        .transition(ctx.mkTransition(100))
+        .attr("x", d => d.x0)
+        .attr("y", d => d.y0)
+        .attr("width", d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0);
+
+    nodes.merge(newNodes)
+        .selectAll("text")
+        .attr("font-size", 9)
+        .attr("dx", d => d.x0 + 10)
+        .attr("dy", d => d.y0 + 11);
+
+    nodes.exit()
+        .remove();
+}
 
 
 function focus(d, ctx) {
@@ -203,9 +297,14 @@ function boot(rawData) {
         margin: 150,
     };
 
-    const layout = d3
+    const treeLayout = d3
         .tree()
         .size([dimensions.w, dimensions.h]);
+
+    const treemapLayout = d3
+        .treemap()
+        .padding(16)
+        .size([dimensions.w, dimensions.h])
 
     const nodeScale = d3
         .scaleLog()
@@ -219,7 +318,8 @@ function boot(rawData) {
         viz: setupSvg(dimensions),
         fontSize: 8,
         maxDepth: 4,
-        layout,
+        treeLayout,
+        treemapLayout,
         nodeScale,
         hierData,
         mkTransition: (speed = 400) => d3
@@ -228,7 +328,8 @@ function boot(rawData) {
             .ease(d3.easeCubicInOut),
         tweaker: TWEAKERS.leftRight,
         working: hierData,
-        direction: "DESCEND"
+        direction: "DESCEND",
+        renderMode: "TREE"
     };
 
     draw(tree.clip(ctx));
@@ -250,6 +351,15 @@ function swapOrientation() {
 }
 
 
+function swapRenderMode() {
+        global.ctx.renderMode = global.ctx.renderMode === "TREE"
+            ? "TREEMAP"
+            : "TREE";
+
+        draw(global.ctx);
+}
+
+
 function changeMaxDepth(amount = 1) {
     global.ctx.maxDepth = global.ctx.maxDepth + amount;
     draw(tree.clip(ctx));
@@ -266,7 +376,6 @@ function reset() {
 function goUp() {
     const w = global.ctx.working;
 
-
     if (w.data._parent) {
         w.parent = w.data._parent;
         delete w.data._parent;
@@ -280,6 +389,7 @@ function goUp() {
 
 global.changeMaxDepth = changeMaxDepth;
 global.swapOrientation = swapOrientation;
+global.swapRenderMode = swapRenderMode;
 global.reset = reset;
 global.goUp = goUp;
 

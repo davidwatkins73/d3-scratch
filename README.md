@@ -2,7 +2,7 @@
 
 This example is an attempt to create a explorable, windowed, tree viewer for large data sets.
 
-## TODO
+## TODO (TREE)
 
 - [x] Navigation
 - [x] Animation
@@ -18,4 +18,8 @@ This example is an attempt to create a explorable, windowed, tree viewer for lar
 - [ ] Bookmarks
 - [ ] Colouring (e.g. ratings)
 - [x] flipping direction (horiz/vert)
-- [ ] switch to treemap
+- [x] switch to treemap
+
+
+## TODO (TREEMAP)
+
