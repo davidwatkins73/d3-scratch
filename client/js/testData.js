@@ -272,6 +272,7 @@ function getParentId(idMap = {}, d = "") {
         : idMap[d.substr(0, d.length - 1)] || null;
 }
 
+
 function mkData(dataStr) {
     const codes = dataStr.split(/\s+/).filter(code => code !== "");
 
@@ -292,8 +293,9 @@ function mkData(dataStr) {
                     name: mkName(Math.ceil(Math.random() * 3))
                 };
             }))
-        .sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+        .sort((a,b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 }
 
 
-export default mkData(wideData);
+export default mkData(complexData);

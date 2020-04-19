@@ -1,7 +1,7 @@
 import '../styles/index.scss';
 import * as d3 from "d3";
 import testData from "./testData";
-
+import * as tree from "./tree";
 
 const TWEAKERS = {
     topDown: {
@@ -123,11 +123,6 @@ function drawNodes(ctx, data) {
 }
 
 
-function mkEdgeId(d) {
-    return d.data.parentId + "_" + d.data.id;
-}
-
-
 function drawEdges(ctx, data) {
     const edgeData = data
         .filter(d => d.parent);
@@ -136,7 +131,7 @@ function drawEdges(ctx, data) {
         .viz
         .select(".edges")
         .selectAll(".edge")
-        .data(edgeData, d => mkEdgeId(d));
+        .data(edgeData, tree.mkEdgeId);
 
     edges
         .exit()
@@ -146,7 +141,7 @@ function drawEdges(ctx, data) {
         .enter()
         .append("line")
         .classed("edge", true)
-        .attr("data-edge-id", mkEdgeId)
+        .attr("data-edge-id", tree.mkEdgeId)
         .attr("x1", 200)
         .attr("x2", 200)
         .attr("y1", 200)
@@ -181,92 +176,20 @@ function draw(ctx) {
 }
 
 
-function clipTree(ctx) {
-    const w = ctx.working;
-
-    disableParent(w);
-
-    const visit = (xs, curDepth = 0) => {
-        xs.forEach(x => {
-            x.depth = curDepth;
-            if (curDepth > 0) {
-                // repair parent links
-                enableParent(x);
-            }
-            if (curDepth >= ctx.maxDepth) {
-                disableChildren(x);
-            } else {
-                enableChildren(x);
-                visit(x.children || [], curDepth + 1);
-            }
-        });
-    };
-
-    visit([w]);
-    return ctx;
-}
-
 
 function focus(d, ctx) {
-    if (sameNode(d, ctx.working)) {
-        if (hasParents(d)) {
+    if (tree.sameNode(d, ctx.working)) {
+        if (tree.hasParents(d)) {
             ctx.direction = "ASCEND";
             goUp();
         }
     } else {
         ctx.direction = "DESCEND";
-        ctx.working = disableParent(d);
+        ctx.working = tree.disableParent(d);
     }
-    clipTree(ctx);
+    tree.clip(ctx);
     draw(ctx);
 }
-
-
-function hasParents(d) {
-    return d.parent || d.data._parent
-}
-
-
-function sameNode(a, b) {
-    return a.data.id === b.data.id;
-}
-
-
-function disableParent(d) {
-    if (d.parent) {
-        d.data._parent = d.parent;
-        delete d.parent;
-    }
-    return d;
-}
-
-
-function disableChildren(d) {
-    if (d.children) {
-        d.data._children = d.children;
-        delete d.children;
-    }
-    return d;
-}
-
-
-function enableChildren(d) {
-    if (d.data._children) {
-        d.children = d.data._children;
-        delete d.data._children;
-    }
-    return d;
-}
-
-
-function enableParent(d) {
-    if (d.data._parent) {
-        d.parent = d.data._parent;
-        delete d.data._parent;
-    }
-    return d;
-}
-
 
 
 function boot(rawData) {
@@ -308,7 +231,7 @@ function boot(rawData) {
         direction: "DESCEND"
     };
 
-    draw(clipTree(ctx));
+    draw(tree.clip(ctx));
     global.ctx = ctx;
 }
 
@@ -318,7 +241,7 @@ boot(testData);
 
 // --- interact
 
-function swap() {
+function swapOrientation() {
         global.ctx.tweaker = global.ctx.tweaker === TWEAKERS.leftRight
             ? TWEAKERS.topDown
             : TWEAKERS.leftRight;
@@ -329,14 +252,14 @@ function swap() {
 
 function changeMaxDepth(amount = 1) {
     global.ctx.maxDepth = global.ctx.maxDepth + amount;
-    draw(clipTree(ctx));
+    draw(tree.clip(ctx));
 }
 
 
 function reset() {
     global.ctx.maxDepth = 3;
     global.ctx.working = ctx.hierData;
-    draw(clipTree(global.ctx))
+    draw(tree.clip(global.ctx))
 }
 
 
@@ -351,12 +274,12 @@ function goUp() {
         global.ctx.direction = "ASCEND";
         global.ctx.working = w.parent;
 
-        draw(clipTree(global.ctx));
+        draw(tree.clip(global.ctx));
     }
 }
 
 global.changeMaxDepth = changeMaxDepth;
-global.swap = swap;
+global.swapOrientation = swapOrientation;
 global.reset = reset;
 global.goUp = goUp;
 
