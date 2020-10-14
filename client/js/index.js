@@ -213,7 +213,8 @@ function drawTreemap(ctx) {
     const root = ctx
         .treemapLayout(ctx.working)
 
-    const descendants = root.descendants();
+    const descendants = root
+        .descendants();
 
     const nodes = ctx
         .viz
@@ -230,6 +231,7 @@ function drawTreemap(ctx) {
         .append("rect")
 
     newNodes
+        .filter(d => d.depth <   3)
         .append("text")
         .attr("fill", "black")
         .text(d => d.data.name)
@@ -289,7 +291,7 @@ function focus(d, ctx) {
 function boot(rawData) {
     const hierData = d3
         .stratify()(rawData)
-        .sum(d => d.count || 0);
+        .sum(d => (d.count || 0) + 10);
 
     const dimensions = {
         w: 600,
