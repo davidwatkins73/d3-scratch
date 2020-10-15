@@ -3,6 +3,7 @@ import {getRandomDate, randomPick} from "./utils";
 
 let ctr = 0;
 
+
 function mkDate(phase) {
     return getRandomDate(phase.start, phase.end);
 }
@@ -29,7 +30,6 @@ export const categories = {
         name: "Replatform",
         position: 4
     },
-
 };
 
 
@@ -48,12 +48,14 @@ const phases = {
     }
 };
 
+
 const liftAndShift = (phase) => ({
     id: ctr++,
     name: "drop in",
     date: mkDate(phase),
     category: categories.liftAndShift
 });
+
 
 const easyRefactor = (phase) => ({
     id: ctr++,
@@ -62,12 +64,14 @@ const easyRefactor = (phase) => ({
     category: categories.easyRefactor
 });
 
+
 const hardRefactor = (phase) => ({
     id: ctr++,
     name: "refactor hard",
     date: mkDate(phase),
     category: categories.hardRefactor
 });
+
 
 const replatform = (phase) => ({
     id: ctr++,
@@ -79,6 +83,8 @@ const replatform = (phase) => ({
 
 const examplePaths = [
     () => [ liftAndShift(phases.p1) ],
+    () => [ liftAndShift(phases.p1) ],
+    () => [ liftAndShift(phases.p2) ],
     () => [ liftAndShift(phases.p2) ],
     () => [ liftAndShift(phases.p1), hardRefactor(phases.p2) ],
     () => [ liftAndShift(phases.p2), hardRefactor(phases.p3) ],
@@ -87,12 +93,17 @@ const examplePaths = [
     () => [ easyRefactor(phases.p2), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p1), hardRefactor(phases.p2), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p1) ],
+    () => [ easyRefactor(phases.p1) ],
+    () => [ easyRefactor(phases.p2) ],
     () => [ easyRefactor(phases.p2) ],
     () => [ easyRefactor(phases.p3) ],
     () => [ hardRefactor(phases.p1) ],
     () => [ hardRefactor(phases.p2) ],
+    () => [ hardRefactor(phases.p2) ],
+    () => [ hardRefactor(phases.p3) ],
     () => [ hardRefactor(phases.p3) ],
     () => [ replatform(phases.p2) ],
+    () => [ replatform(phases.p3) ],
     () => [ replatform(phases.p3) ]
 ];
 
@@ -109,6 +120,6 @@ function mkAppData() {
 }
 
 
-export const data = _.map(_.range(200), d => mkAppData());
-
-
+export const data = _.map(
+    _.range(300),
+    mkAppData);

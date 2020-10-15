@@ -14,14 +14,15 @@ function drawApps(scales, elem, nodeData = []) {
         .classed("app", true)
         .attr("fill", d => scales.color(d.app.id))
         .attr("stroke", d => scales.color(d.app.id))
-        .on("mouseover", d => console.log(d.milestone.category.name, d.milestone.date))
+        .on("mouseover", d => console.log(d.app.name, d.milestone.category.name));
 
     apps.merge(newApps)
         .attr("r", d => d.app.size)
         .attr("cx", d => scales.x(d.milestone.date))
-        .attr("cy", d => scales.y(d.milestone.category.id) + scales.y.bandwidth() / 2)
+        .attr("cy", d => scales.y(d.milestone.category.id) + scales.y.bandwidth() / 2);
 
-    apps.exit().remove();
+    apps.exit()
+        .remove();
 }
 
 
@@ -41,7 +42,8 @@ function drawArcs(scales, elem, arcData = []) {
         .attr("y1", d => scales.y(d.m1.category.id) + scales.y.bandwidth() / 2)
         .attr("y2", d => scales.y(d.m2.category.id) + scales.y.bandwidth() / 2);
 
-    arcs.exit().remove();
+    arcs.exit()
+        .remove();
 }
 
 
@@ -83,18 +85,18 @@ export function draw(elemSelector,
                       categories = []) {
 
     const data = prepareData(rawData, categories);
-
-    const scales = mkScales(data.nodeData, data.categories);
+    const scales = mkScales(data.nodeData, categories);
     const containers = setupContainers(elemSelector);
 
-    drawAxes(scales, containers.svg, data.categories);
+    drawAxes(scales, containers.svg, categories);
 
-    drawApps(scales, containers.apps, data.nodeData);
-    drawArcs(scales, containers.arcs, data.arcData);
-
-    return (updatedRawData) => {
+    const redraw = (updatedRawData) => {
         const updatedData = prepareData(updatedRawData, categories);
         drawApps(scales, containers.apps, updatedData.nodeData);
         drawArcs(scales, containers.arcs, updatedData.arcData);
     };
+
+    redraw(rawData);
+
+    return redraw;
 }
