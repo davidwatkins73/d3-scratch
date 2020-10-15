@@ -1,12 +1,7 @@
 import '../styles/index.scss';
 import {select} from "d3-selection";
-import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
-import {axisBottom, axisLeft} from "d3-axis";
-import {timeFormat} from "d3-time-format";
-import {extent, pairs} from "d3-array";
 import {categories, data} from "./data";
-import {mkArcData, mkNodeData} from "./utils";
-
+import {drawAxes, mkArcData, mkNodeData, mkScales} from "./utils";
 
 
 // viz
@@ -43,54 +38,6 @@ function drawArcs(scales, elem, arcData = []) {
         .attr("x2", d => scales.x(d.m2.date))
         .attr("y1", d => scales.y(d.m1.category.id) + scales.y.bandwidth() / 2)
         .attr("y2", d => scales.y(d.m2.category.id) + scales.y.bandwidth() / 2);
-}
-
-
-function mkScaleY(categories = []) {
-    const orderedCategories = _
-        .chain(categories)
-        .orderBy(d => d.position * -1)
-        .value();
-
-    return scaleBand()
-        .domain(_.map(
-            orderedCategories,
-            d => d.id))
-        .range([0, 540]);
-}
-
-
-function mkScaleX(nodeData) {
-    const dateExtent = extent(
-        nodeData,
-        d => d.milestone.date);
-    return scaleTime()
-        .domain(dateExtent)
-        .range([0, 780])
-        .nice();
-}
-
-
-function drawAxes(scales, svg, categoriesById) {
-    svg.append("g")
-        .attr("transform", "translate(80 570)")
-        .call(axisBottom(scales.x)
-            .tickFormat(timeFormat("%d %b %Y"))
-            .ticks(6));
-
-    svg.append("g")
-        .attr("transform", "translate(80 30)")
-        .call(axisLeft(scales.y)
-            .tickFormat(d => categoriesById[d].name));
-}
-
-
-function mkScales(nodeData, categories) {
-    return {
-        x: mkScaleX(nodeData),
-        y: mkScaleY(categories),
-        color: scaleOrdinal(schemeCategory20c)
-    };
 }
 
 
@@ -131,6 +78,4 @@ function draw(data = [],
     drawArcs(scales, arcsG, arcData);
 }
 
-
 draw(data, categories);
-
