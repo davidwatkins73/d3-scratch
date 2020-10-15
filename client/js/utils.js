@@ -3,6 +3,7 @@ import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {axisBottom, axisLeft} from "d3-axis";
 import {timeFormat} from "d3-time-format";
 
+
 export function randomPick(xs) {
     if (!xs) throw new Error("Cannot pick from a null set of options");
 
@@ -10,7 +11,6 @@ export function randomPick(xs) {
     const idx = Math.round(Math.random() * choiceCount);
     return xs[idx];
 }
-
 
 
 export function getRandomDate(from, to) {
@@ -38,7 +38,6 @@ export function mkArcData(data = []) {
 }
 
 
-
 function mkScaleY(categories = []) {
     const orderedCategories = _
         .chain(categories)
@@ -64,7 +63,13 @@ function mkScaleX(nodeData) {
 }
 
 
-export function drawAxes(scales, svg, categoriesById) {
+export function drawAxes(scales,
+                         svg,
+                         categories) {
+    const categoriesById = _.keyBy(
+        categories,
+        d => d.id);
+
     svg.append("g")
         .attr("transform", "translate(80 570)")
         .call(axisBottom(scales.x)
@@ -78,7 +83,8 @@ export function drawAxes(scales, svg, categoriesById) {
 }
 
 
-export function mkScales(nodeData, categories) {
+export function mkScales(nodeData,
+                         categories) {
     return {
         x: mkScaleX(nodeData),
         y: mkScaleY(categories),

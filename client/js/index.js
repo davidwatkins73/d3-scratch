@@ -31,9 +31,12 @@ function drawArcs(scales, elem, arcData = []) {
         .selectAll("line.arc")
         .data(arcData, d => `${d.m1.id}_${d.m2.id}`);
 
-    arcs.enter()
+    const newArcs = arcs
+        .enter()
         .append("line")
-        .classed("arc", true)
+        .classed("arc", true);
+
+    arcs.merge(newArcs)
         .attr("x1", d => scales.x(d.m1.date))
         .attr("x2", d => scales.x(d.m2.date))
         .attr("y1", d => scales.y(d.m1.category.id) + scales.y.bandwidth() / 2)
@@ -41,41 +44,46 @@ function drawArcs(scales, elem, arcData = []) {
 }
 
 
-function draw(data = [],
-              categories = []) {
-
-    const nodeData = mkNodeData(data);
-    const arcData = mkArcData(data);
-
-    const categoriesById = _.keyBy(
-        categories,
-        d => d.id);
-
-    const scales = mkScales(nodeData, categories);
-
-    console.log({nodeData, arcData, data, categories})
-
+function setupContainers() {
     const svg = select("#viz")
         .append("svg")
         .attr("width", 900)
         .attr("height", 600);
 
-    drawAxes(scales, svg, categoriesById);
-
     const graph = svg
         .append("g")
         .attr("transform", "translate(80, 30)");
 
-    const arcsG = graph
+    const arcs = graph
         .append("g")
         .classed("arcs", true);
 
-    const appsG = graph
+    const apps = graph
         .append("g")
         .classed("apps", true);
 
-    drawApps(scales, appsG, nodeData);
-    drawArcs(scales, arcsG, arcData);
+    return {
+        svg,
+        arcs,
+        apps
+    };
+}
+
+function draw(data = [],
+              categories = []) {
+
+    const nodeData = mkNodeData(data);
+    const arcData = mkArcData(data);
+    console.log({nodeData, arcData, data, categories})
+
+
+    const scales = mkScales(nodeData, categories);
+    const containers = setupContainers();
+
+
+    drawAxes(scales, containers.svg, categories);
+    drawApps(scales, containers.apps, nodeData);
+    drawArcs(scales, containers.arcs, arcData);
 }
 
 draw(data, categories);
