@@ -1,26 +1,55 @@
 import '../styles/index.scss';
-import * as d3 from "d3";
+import {select} from "d3-selection";
+import {scaleBand, scalePoint, scaleTime} from "d3-scale";
+import {axisBottom, axisLeft, axisRight, axisTop} from "d3-axis";
+import {timeFormat} from "d3-time-format";
+import {extent, max} from "d3-array";
+import {data, categories} from "./data";
+
+console.log('webpack starterkit', {data});
+
+const svg = select("#viz")
+    .append("svg")
+    .attr("width", 900)
+    .attr("height", 600);
 
 
-console.log('webpack starterkit');
-
-console.log(d3)
-
-
-const svg = d3
-    .select("#viz")
-    .append("svg");
+const dateExtent = extent(
+    data,
+    d => max(d.milestones, d => d.date));
 
 
-const data = [10, 40, 34, 10, 9];
+
+const yValues = _
+    .chain(categories)
+    .orderBy(d => d.position * -1)
+    .value();
+
+console.log({yValues})
+
+const y = scaleBand()
+    .domain(_.map(yValues, d => d.name))
+    .range([0, 540]);
 
 
-svg.selectAll("circle")
-    .data(data)
-    .enter()
-    .append("circle")
-    .attr("r", d => d / 2)
-    .attr("cx", (d, i) => (i + 1)  * 30)
-    .attr("cy", 100)
-    .attr("stroke", "red")
-    .attr("fill", "pink");
+const x = scaleTime()
+    .domain(dateExtent)
+    .range([0, 780])
+    .nice();
+
+
+svg.append("g")
+    .attr("transform", "translate(80 570)")
+    .call(axisBottom(x)
+        .tickFormat(timeFormat("%d %b %Y"))
+        .ticks(6));
+
+svg.append("g")
+    .attr("transform", "translate(80 30)")
+    .call(axisLeft(y));
+
+
+console.log({data, categories})
+
+svg.append("g")
+    .classed()
