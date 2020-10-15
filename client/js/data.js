@@ -86,6 +86,12 @@ const examplePaths = [
     () => [ liftAndShift(phases.p1), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p2), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p1), hardRefactor(phases.p2), replatform(phases.p3) ],
+    () => [ easyRefactor(phases.p1) ],
+    () => [ easyRefactor(phases.p2) ],
+    () => [ easyRefactor(phases.p3) ],
+    () => [ hardRefactor(phases.p1) ],
+    () => [ hardRefactor(phases.p2) ],
+    () => [ hardRefactor(phases.p3) ],
     () => [ replatform(phases.p2) ],
     () => [ replatform(phases.p3) ]
 ];
