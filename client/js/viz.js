@@ -1,7 +1,24 @@
 import {select} from "d3-selection";
-import {drawAxes, mkArcData, mkNodeData, mkScales} from "./utils";
+import {mkArcData, mkNodeData} from "./utils";
+import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
+import {extent} from "d3-array";
+import {axisBottom, axisLeft} from "d3-axis";
+import {timeFormat} from "d3-time-format";
 
 // viz
+
+const margins = {
+    top: 30,
+    left: 80,
+    right: 10,
+    bottom: 50
+};
+
+const dimensions = {
+    w: 1000,
+    h: 800
+};
+
 
 function drawApps(scales, elem, nodeData = []) {
     const apps = elem
@@ -50,12 +67,12 @@ function drawArcs(scales, elem, arcData = []) {
 function setupContainers(elemSelector = '#viz') {
     const svg = select(elemSelector)
         .append("svg")
-        .attr("width", 900)
-        .attr("height", 600);
+        .attr("width", dimensions.w)
+        .attr("height", dimensions.h);
 
     const graph = svg
         .append("g")
-        .attr("transform", "translate(80, 30)");
+        .attr("transform", `translate(${margins.left}, ${margins.top})`);
 
     const arcs = graph
         .append("g")
@@ -71,6 +88,63 @@ function setupContainers(elemSelector = '#viz') {
         apps
     };
 }
+
+
+function mkScaleY(categories = []) {
+    const orderedCategories = _
+        .chain(categories)
+        .orderBy(d => d.position * -1)
+        .value();
+
+    return scaleBand()
+        .domain(_.map(
+            orderedCategories,
+            d => d.id))
+        .range([0, dimensions.h - (margins.top + margins.bottom)]);
+}
+
+
+function mkScaleX(nodeData) {
+    const dateExtent = extent(
+        nodeData,
+        d => d.milestone.date);
+
+    return scaleTime()
+        .domain(dateExtent)
+        .range([0, dimensions.w - (margins.left + margins.right)])
+        .nice();
+}
+
+
+ function mkScales(nodeData,
+                         categories) {
+    return {
+        x: mkScaleX(nodeData),
+        y: mkScaleY(categories),
+        color: scaleOrdinal(schemeCategory20c)
+    };
+}
+
+
+function drawAxes(scales,
+                         svg,
+                         categories) {
+    const categoriesById = _.keyBy(
+        categories,
+        d => d.id);
+
+    svg.append("g")
+        .attr("transform", `translate(${margins.left} ${dimensions.h - (margins.bottom)})`)
+        .call(axisBottom(scales.x)
+            .tickFormat(timeFormat("%d %b %Y"))
+            .ticks(6));
+
+    svg.append("g")
+        .attr("transform", `translate(${margins.left} ${margins.top})`)
+        .call(axisLeft(scales.y)
+            .tickFormat(d => categoriesById[d].name));
+}
+
 
 
 function prepareData(rawData, categories) {
