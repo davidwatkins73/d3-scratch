@@ -4,8 +4,11 @@ import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {extent} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
 import {timeFormat} from "d3-time-format";
+import {easeLinear} from "d3-ease";
+import {transition} from "d3-transition";
 
 // viz
+const ANIMATION_DURATION = 100;
 
 const margins = {
     top: 30,
@@ -20,26 +23,31 @@ const dimensions = {
 };
 
 
+
 function drawApps(scales, elem, nodeData = []) {
     const apps = elem
         .selectAll("circle.app")
         .data(nodeData, d => d.milestone.id);
+
 
     const newApps = apps
         .enter()
         .append("circle")
         .classed("app", true)
         .attr("fill", d => scales.color(d.app.id))
-        .attr("stroke", d => scales.color(d.app.id))
-        .on("mouseover", d => console.log(d.app.name, d.milestone.category.name));
+        .attr("stroke", d => scales.color(d.app.id));
 
-    apps.merge(newApps)
+
+    const allApps = apps
+        .merge(newApps)
         .attr("r", d => d.app.size)
         .attr("cx", d => scales.x(d.milestone.date))
         .attr("cy", d => scales.y(d.milestone.category.id) + scales.y.bandwidth() / 2);
 
     apps.exit()
         .remove();
+
+    return allApps;
 }
 
 
@@ -53,7 +61,8 @@ function drawArcs(scales, elem, arcData = []) {
         .append("line")
         .classed("arc", true);
 
-    arcs.merge(newArcs)
+    const allArcs = arcs
+        .merge(newArcs)
         .attr("x1", d => scales.x(d.m1.date))
         .attr("x2", d => scales.x(d.m2.date))
         .attr("y1", d => scales.y(d.m1.category.id) + scales.y.bandwidth() / 2)
@@ -61,6 +70,8 @@ function drawArcs(scales, elem, arcData = []) {
 
     arcs.exit()
         .remove();
+
+    return allArcs;
 }
 
 
@@ -117,7 +128,7 @@ function mkScaleX(nodeData) {
 
 
  function mkScales(nodeData,
-                         categories) {
+                   categories) {
     return {
         x: mkScaleX(nodeData),
         y: mkScaleY(categories),
@@ -150,7 +161,11 @@ function drawAxes(scales,
 function prepareData(rawData, categories) {
     const nodeData = mkNodeData(rawData);
     const arcData = mkArcData(rawData);
-    return {nodeData, arcData, categories};
+    return {
+        nodeData,
+        arcData,
+        categories
+    };
 }
 
 
@@ -164,10 +179,43 @@ export function draw(elemSelector,
 
     drawAxes(scales, containers.svg, categories);
 
-    const redraw = (updatedRawData) => {
+    const redraw = (updatedRawData = rawData) => {
         const updatedData = prepareData(updatedRawData, categories);
-        drawApps(scales, containers.apps, updatedData.nodeData);
-        drawArcs(scales, containers.arcs, updatedData.arcData);
+        const allApps = drawApps(scales, containers.apps, updatedData.nodeData, redraw);
+        const allArcs = drawArcs(scales, containers.arcs, updatedData.arcData, redraw);
+
+        console.log({updatedData})
+        allApps
+            .on("mouseover.debug", (d) => { console.log(d.app.name, d.milestone.date)})
+            .on("mouseover.highlight", function(d) {
+                allApps
+                    .transition(transition()
+                        .ease(easeLinear)
+                        .duration(ANIMATION_DURATION))
+                    .style("opacity", x => (x.app.id === d.app.id) ? 1 : 0.2)
+                    .attr("stroke-width", x => (x.app.id === d.app.id) ? 2 : 1);
+
+                allArcs
+                    .transition(transition()
+                        .ease(easeLinear)
+                        .duration(ANIMATION_DURATION))
+                    .style("opacity", x => x.app.id === d.app.id ? 1 : 0.2 )
+                    .attr("stroke-width", x => x.app.id === d.app.id ? 2 : 1);
+            })
+            .on("mouseleave.removeHighlight", function(d) {
+                allApps
+                    .transition(transition()
+                        .ease(easeLinear)
+                        .duration(ANIMATION_DURATION))
+                    .style("opacity", 1)
+                    .attr("stroke-width", 1);
+                allArcs
+                    .transition(transition()
+                        .ease(easeLinear)
+                        .duration(ANIMATION_DURATION))
+                    .style("opacity", 1)
+                    .attr("stroke-width", 1);
+            });
     };
 
     redraw(rawData);

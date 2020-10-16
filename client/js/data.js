@@ -5,7 +5,14 @@ let ctr = 0;
 
 
 function mkDate(phase) {
-    return getRandomDate(phase.start, phase.end);
+    const approx = getRandomDate(phase.start, phase.end);
+    approx.setDate(approx.getDate() + (5 + 7 - approx.getDay()) % 7);
+    approx.setHours(0);
+    approx.setMinutes(0);
+    approx.setSeconds(0);
+    approx.setMilliseconds(0);
+    return approx;
+
 }
 
 
