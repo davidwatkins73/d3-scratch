@@ -1,11 +1,12 @@
 import {select} from "d3-selection";
 import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
 import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
-import {extent} from "d3-array";
+import {extent, pairs} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
 import {timeFormat} from "d3-time-format";
 import {easeLinear} from "d3-ease";
 import {transition} from "d3-transition";
+import {forceCollide, forceManyBody, forceSimulation, forceY} from "d3-force";
 
 // viz
 const ANIMATION_DURATION = 100;
@@ -32,7 +33,28 @@ const colors = {
 };
 
 
+function layoutApps(nodeData, scales) {
+    const byCategory = _.groupBy(nodeData, d => d.milestone.category.id);
+
+    _.forEach(byCategory, (v, k) => {
+        const simulation = forceSimulation(v)
+            .force("y", forceY(scales.y(k)))
+            .force(
+                "collide",
+                forceCollide()
+                    .radius(d => scales.appSize(d.app.size) + 8))
+            .force("manyBody", forceManyBody().strength(-15))
+            .stop();
+
+        for (let i = 0; i < 200; ++i) {
+            simulation.tick();
+        }
+    });
+}
+
 function drawApps(scales, elem, nodeData = []) {
+
+
     const apps = elem
         .selectAll("circle.app")
         .data(nodeData, d => d.milestone.id);
@@ -44,14 +66,14 @@ function drawApps(scales, elem, nodeData = []) {
         .attr("fill", d => scales.color(d.app.id))
         .attr("stroke", d => scales.color(d.app.id));
 
+    apps.exit()
+        .remove();
+
     const allApps = apps
         .merge(newApps)
         .attr("r", d => scales.appSize(d.app.size))
         .attr("cx", d => scales.x(d.milestone.date))
-        .attr("cy", d => scales.y(d.milestone.category.id) + scales.y.bandwidth() / 2);
-
-    apps.exit()
-        .remove();
+        .attr("cy", d => d.y + scales.y.bandwidth() / 2);
 
     return allApps;
 }
@@ -60,7 +82,7 @@ function drawApps(scales, elem, nodeData = []) {
 function drawArcs(scales, elem, arcData = []) {
     const arcs = elem
         .selectAll("path.arc")
-        .data(arcData, d => `${d.m1.id}_${d.m2.id}`);
+        .data(arcData, d => d.id);
 
     const newArcs = arcs
         .enter()
@@ -73,9 +95,9 @@ function drawArcs(scales, elem, arcData = []) {
         .merge(newArcs)
         .attr("d", d => mkCurvedLine(
             scales.x(d.m1.date),
-            scales.y(d.m1.category.id) + scales.y.bandwidth() / 2,
+            d.y1 + scales.y.bandwidth() / 2,
             scales.x(d.m2.date),
-            scales.y(d.m2.category.id) + scales.y.bandwidth() / 2,
+            d.y2 + scales.y.bandwidth() / 2,
             2
         ));
 
@@ -186,6 +208,7 @@ function prepareData(rawData, categories) {
     const nodeData = mkNodeData(rawData);
     const arcData = mkArcData(rawData);
     return {
+        rawData,
         nodeData,
         arcData,
         categories
@@ -204,13 +227,36 @@ export function draw(elemSelector,
     drawAxes(scales, containers.svg, categories);
 
     const redraw = (updatedRawData = rawData) => {
+
+        // TODO: Cleanup this stuff.  prepateData doesn't need to do arcs and the below
+        //   should be pulled out.  Perhaps prepareData should do the layout as well.....
         const updatedData = prepareData(updatedRawData, categories);
+        layoutApps(updatedData.nodeData, scales);
+        const arcData = _
+            .chain(updatedData.nodeData)
+            .groupBy(d => d.app.id)
+            .flatMap(d => pairs(
+                _.orderBy(d, m => m.milestone.date),
+                (m1, m2) => ({
+                    id: `${m1.milestone.id}_${m2.milestone.id}`,
+                    app: m1.app,
+                    m1: m1.milestone,
+                    m2: m2.milestone,
+                    y1: m1.y,
+                    y2: m2.y
+                })))
+            .filter()
+            .value();
+
         const allApps = drawApps(scales, containers.apps, updatedData.nodeData, redraw);
-        const allArcs = drawArcs(scales, containers.arcs, updatedData.arcData, redraw);
+        const allArcs = drawArcs(scales, containers.arcs, arcData, redraw);
 
         console.log({updatedData})
         allApps
-            .on("mouseover.debug", (d) => { console.log(d.app.name, d.milestone.date)})
+            .on("mouseover.debug", (d) => console.log(
+                d.milestone.date,
+                d.app.name,
+                d.milestone.category.name))
             .on("mouseover.highlight", function(d) {
                 allApps
                     .transition(transition()

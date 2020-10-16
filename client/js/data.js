@@ -90,15 +90,16 @@ const replatform = (phase) => ({
 
 const examplePaths = [
     () => [ liftAndShift(phases.p1) ],
+    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
+    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
+    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
     () => [ liftAndShift(phases.p1) ],
     () => [ liftAndShift(phases.p2) ],
     () => [ liftAndShift(phases.p2) ],
     () => [ liftAndShift(phases.p1), hardRefactor(phases.p2) ],
-    () => [ liftAndShift(phases.p2), hardRefactor(phases.p3) ],
     () => [ liftAndShift(phases.p1), easyRefactor(phases.p2) ],
     () => [ liftAndShift(phases.p1), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p2), replatform(phases.p3) ],
-    () => [ easyRefactor(phases.p1), hardRefactor(phases.p2), replatform(phases.p3) ],
     () => [ easyRefactor(phases.p1) ],
     () => [ easyRefactor(phases.p1) ],
     () => [ easyRefactor(phases.p2) ],
@@ -128,5 +129,5 @@ function mkAppData() {
 
 
 export const data = _.map(
-    _.range(300),
+    _.range(150),
     mkAppData);
