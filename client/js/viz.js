@@ -1,6 +1,6 @@
 import {select} from "d3-selection";
-import {mkArcData, mkNodeData} from "./utils";
-import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
+import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
+import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {extent} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
 import {timeFormat} from "d3-time-format";
@@ -9,6 +9,8 @@ import {transition} from "d3-transition";
 
 // viz
 const ANIMATION_DURATION = 100;
+const MAX_NODE_SIZE = 10;
+const MIN_NODE_SIZE = 2;
 
 const margins = {
     top: 30,
@@ -22,13 +24,18 @@ const dimensions = {
     h: 800
 };
 
+const colors = {
+    arc: {
+        highlight: "#d65050",
+        normal: "#eee"
+    }
+};
 
 
 function drawApps(scales, elem, nodeData = []) {
     const apps = elem
         .selectAll("circle.app")
         .data(nodeData, d => d.milestone.id);
-
 
     const newApps = apps
         .enter()
@@ -37,10 +44,9 @@ function drawApps(scales, elem, nodeData = []) {
         .attr("fill", d => scales.color(d.app.id))
         .attr("stroke", d => scales.color(d.app.id));
 
-
     const allApps = apps
         .merge(newApps)
-        .attr("r", d => d.app.size)
+        .attr("r", d => scales.appSize(d.app.size))
         .attr("cx", d => scales.x(d.milestone.date))
         .attr("cy", d => scales.y(d.milestone.category.id) + scales.y.bandwidth() / 2);
 
@@ -53,20 +59,25 @@ function drawApps(scales, elem, nodeData = []) {
 
 function drawArcs(scales, elem, arcData = []) {
     const arcs = elem
-        .selectAll("line.arc")
+        .selectAll("path.arc")
         .data(arcData, d => `${d.m1.id}_${d.m2.id}`);
 
     const newArcs = arcs
         .enter()
-        .append("line")
-        .classed("arc", true);
+        .append("path")
+        .classed("arc", true)
+        .attr("fill", "none")
+        .attr("stroke", colors.arc.normal)
 
     const allArcs = arcs
         .merge(newArcs)
-        .attr("x1", d => scales.x(d.m1.date))
-        .attr("x2", d => scales.x(d.m2.date))
-        .attr("y1", d => scales.y(d.m1.category.id) + scales.y.bandwidth() / 2)
-        .attr("y2", d => scales.y(d.m2.category.id) + scales.y.bandwidth() / 2);
+        .attr("d", d => mkCurvedLine(
+            scales.x(d.m1.date),
+            scales.y(d.m1.category.id) + scales.y.bandwidth() / 2,
+            scales.x(d.m2.date),
+            scales.y(d.m2.category.id) + scales.y.bandwidth() / 2,
+            2
+        ));
 
     arcs.exit()
         .remove();
@@ -127,11 +138,24 @@ function mkScaleX(nodeData) {
 }
 
 
+
+function mkScaleAppSize(nodeData) {
+    const sizeExtent = extent(
+        nodeData,
+        d => d.app.size);
+
+    return scaleLinear()
+        .domain(sizeExtent)
+        .range([MIN_NODE_SIZE, MAX_NODE_SIZE]);
+}
+
+
  function mkScales(nodeData,
                    categories) {
     return {
         x: mkScaleX(nodeData),
         y: mkScaleY(categories),
+        appSize: mkScaleAppSize(nodeData),
         color: scaleOrdinal(schemeCategory20c)
     };
 }
@@ -200,6 +224,7 @@ export function draw(elemSelector,
                         .ease(easeLinear)
                         .duration(ANIMATION_DURATION))
                     .style("opacity", x => x.app.id === d.app.id ? 1 : 0.2 )
+                    .attr("stroke", x => x.app.id === d.app.id ? colors.arc.highlight : colors.arc.normal)
                     .attr("stroke-width", x => x.app.id === d.app.id ? 2 : 1);
             })
             .on("mouseleave.removeHighlight", function(d) {
@@ -214,6 +239,7 @@ export function draw(elemSelector,
                         .ease(easeLinear)
                         .duration(ANIMATION_DURATION))
                     .style("opacity", 1)
+                    .attr("stroke", colors.arc.normal)
                     .attr("stroke-width", 1);
             });
     };

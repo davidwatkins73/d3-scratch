@@ -37,3 +37,20 @@ export function mkArcData(data = []) {
             (m1, m2) => ({app: d.app, m1, m2})));
 }
 
+
+/**
+ * @param x1
+ * @param y1
+ * @param x2
+ * @param y2
+ * @param flatness (higher = flatter, defaults to 3)
+ * @returns {string}
+ */
+export function mkCurvedLine(x1, y1, x2, y2, flatness = 3) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dr = Math.sqrt(dx * dx + dy * dy);
+
+    return `M${x2} ${y2}
+            A${dr * flatness},${dr * flatness} 0 0,1 ${x1},${y1}`;
+}
