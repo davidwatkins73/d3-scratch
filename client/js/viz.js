@@ -1,5 +1,4 @@
 import {select} from "d3-selection";
-import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
 import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {extent, pairs} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
@@ -7,6 +6,7 @@ import {timeFormat} from "d3-time-format";
 import {easeLinear} from "d3-ease";
 import {transition} from "d3-transition";
 import {forceCollide, forceManyBody, forceSimulation, forceY} from "d3-force";
+import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
 
 // viz
 const ANIMATION_DURATION = 100;
@@ -52,9 +52,8 @@ function layoutApps(nodeData, scales) {
     });
 }
 
+
 function drawApps(scales, elem, nodeData = []) {
-
-
     const apps = elem
         .selectAll("circle.app")
         .data(nodeData, d => d.milestone.id);
@@ -160,7 +159,6 @@ function mkScaleX(nodeData) {
 }
 
 
-
 function mkScaleAppSize(nodeData) {
     const sizeExtent = extent(
         nodeData,
@@ -203,7 +201,6 @@ function drawAxes(scales,
 }
 
 
-
 function prepareData(rawData, categories) {
     const nodeData = mkNodeData(rawData);
     const arcData = mkArcData(rawData);
@@ -213,6 +210,41 @@ function prepareData(rawData, categories) {
         arcData,
         categories
     };
+}
+
+
+function highlightAppsAndArcs(allApps, allArcs, node) {
+    allApps
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .style("opacity", x => (x.app.id === node.app.id) ? 1 : 0.2)
+        .attr("stroke-width", x => (x.app.id === node.app.id) ? 2 : 1);
+
+    allArcs
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .style("opacity", x => x.app.id === node.app.id ? 1 : 0.2)
+        .attr("stroke", x => x.app.id === node.app.id ? colors.arc.highlight : colors.arc.normal)
+        .attr("stroke-width", x => x.app.id === node.app.id ? 2 : 1);
+}
+
+
+function removeHighlights(allApps, allArcs) {
+    allApps
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .style("opacity", 1)
+        .attr("stroke-width", 1);
+    allArcs
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .style("opacity", 1)
+        .attr("stroke", colors.arc.normal)
+        .attr("stroke-width", 1);
 }
 
 
@@ -251,43 +283,13 @@ export function draw(elemSelector,
         const allApps = drawApps(scales, containers.apps, updatedData.nodeData, redraw);
         const allArcs = drawArcs(scales, containers.arcs, arcData, redraw);
 
-        console.log({updatedData})
         allApps
             .on("mouseover.debug", (d) => console.log(
                 d.milestone.date,
                 d.app.name,
                 d.milestone.category.name))
-            .on("mouseover.highlight", function(d) {
-                allApps
-                    .transition(transition()
-                        .ease(easeLinear)
-                        .duration(ANIMATION_DURATION))
-                    .style("opacity", x => (x.app.id === d.app.id) ? 1 : 0.2)
-                    .attr("stroke-width", x => (x.app.id === d.app.id) ? 2 : 1);
-
-                allArcs
-                    .transition(transition()
-                        .ease(easeLinear)
-                        .duration(ANIMATION_DURATION))
-                    .style("opacity", x => x.app.id === d.app.id ? 1 : 0.2 )
-                    .attr("stroke", x => x.app.id === d.app.id ? colors.arc.highlight : colors.arc.normal)
-                    .attr("stroke-width", x => x.app.id === d.app.id ? 2 : 1);
-            })
-            .on("mouseleave.removeHighlight", function(d) {
-                allApps
-                    .transition(transition()
-                        .ease(easeLinear)
-                        .duration(ANIMATION_DURATION))
-                    .style("opacity", 1)
-                    .attr("stroke-width", 1);
-                allArcs
-                    .transition(transition()
-                        .ease(easeLinear)
-                        .duration(ANIMATION_DURATION))
-                    .style("opacity", 1)
-                    .attr("stroke", colors.arc.normal)
-                    .attr("stroke-width", 1);
-            });
+            .on("mouseover.highlight", (d) => highlightAppsAndArcs(allApps, allArcs, d))
+            .on("mouseleave.removeHighlight", () => removeHighlights(allApps, allArcs));
     };
 
     redraw(rawData);
