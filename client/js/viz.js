@@ -53,10 +53,12 @@ function hideTooltip(tooltip) {
 }
 
 
-function drawApps(scales, elem, nodeData = []) {
+function drawApps(scales, elem, nodeData = [], nodeFilter = () => true) {
     const apps = elem
         .selectAll("circle.app")
-        .data(nodeData, d => d.milestone.id);
+        .data(
+            _.filter(nodeData, nodeFilter),
+            d => d.milestone.id)
 
     const newApps = apps
         .enter()
@@ -78,11 +80,15 @@ function drawApps(scales, elem, nodeData = []) {
 }
 
 
-function drawArcs(scales, elem, arcData = []) {
-    console.log({arcData, elem, scales});
+function drawArcs(scales,
+                  elem,
+                  arcData = [],
+                  filterFn = () => true) {
     const arcs = elem
         .selectAll("path.arc")
-        .data(arcData, d => d.id);
+        .data(
+            _.filter(arcData, filterFn),
+            d => d.id);
 
     const newArcs = arcs
         .enter()
@@ -93,7 +99,7 @@ function drawArcs(scales, elem, arcData = []) {
 
     const allArcs = arcs
         .merge(newArcs)
-        .attr("d", d => console.log(d) || mkCurvedLine(
+        .attr("d", d => mkCurvedLine(
             scales.x(d.m1.date),
             d.y1 + scales.y.bandwidth() / 2,
             scales.x(d.m2.date),
@@ -194,8 +200,8 @@ function mkScaleAppSize(data) {
 
 
 function drawAxes(scales,
-                         svg,
-                         categories) {
+                  svg,
+                  categories) {
     const categoriesById = _.keyBy(
         categories,
         d => d.id);
@@ -282,16 +288,17 @@ export function draw(elemSelector,
     const scales = mkScales(rawData, categories);
     const containers = setupContainers(elemSelector);
 
+    const data = prepareData(scales, rawData, categories);
+
     drawAxes(scales, containers.svg, categories);
 
-    const redraw = (updatedRawData = rawData) => {
-        const updatedData = prepareData(scales, updatedRawData, categories);
-        const allApps = drawApps(scales, containers.apps, updatedData.nodeData, redraw);
-        const allArcs = drawArcs(scales, containers.arcs, updatedData.arcData, redraw);
+    const redraw = (filterFn = () => true) => {
+        const allApps = drawApps(scales, containers.apps, data.nodeData, filterFn);
+        const allArcs = drawArcs(scales, containers.arcs, data.arcData, filterFn);
         setupInteractivity(allApps, allArcs, containers);
     };
 
-    redraw(rawData);
+    redraw();
 
     return redraw;
 }
