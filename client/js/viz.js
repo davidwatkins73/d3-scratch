@@ -8,7 +8,7 @@ import {transition} from "d3-transition";
 import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
 
 // viz
-const ANIMATION_DURATION = 100;
+const ANIMATION_DURATION = 200;
 const MAX_NODE_SIZE = 10;
 const MIN_NODE_SIZE = 2;
 
@@ -66,6 +66,10 @@ function drawApps(scales, elem, nodeData = []) {
         .attr("stroke", d => scales.color(d.app.id));
 
     apps.exit()
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION * 2))
+        .style("opacity", 0)
         .remove();
 
     return apps
@@ -91,6 +95,10 @@ function drawArcs(scales,
         .attr("stroke", colors.arc.normal)
 
     arcs.exit()
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION * 2))
+        .style("opacity", 0)
         .remove();
 
     return arcs
