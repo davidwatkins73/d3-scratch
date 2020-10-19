@@ -130,5 +130,5 @@ function mkAppData() {
 
 
 export const data = _.map(
-    _.range(150),
+    _.range(100),
     mkAppData);

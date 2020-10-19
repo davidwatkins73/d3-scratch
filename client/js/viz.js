@@ -55,26 +55,35 @@ function hideTooltip(tooltip) {
 
 function drawApps(scales, containers, nodeData = [], allArcs) {
     const apps = containers.apps
-        .selectAll("circle.app")
+        .selectAll("g.app")
         .data(nodeData, d => `${d.app.id}_${d.milestone.id}`);
 
     const newApps = apps
         .enter()
+        .append("g")
+        .classed("app", true);
+
+    newApps
         .append("circle")
-        .classed("app", true)
         .attr("fill", d => scales.color(d.app.id))
         .attr("r", 1)
         .attr("stroke", d => scales.color(d.app.id));
 
     apps.exit()
+        .select("circle")
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
-        .attr("r", 0)
+        .attr("r", 0);
+
+    apps.exit()
+        .transition()
+        .delay(ANIMATION_DURATION)
         .remove();
 
     return apps
         .merge(newApps)
+        .select("circle")
         .attr("cx", d => scales.x(d.milestone.date))
         .attr("cy", d => d.y + scales.y.bandwidth() / 2)
         .call(setupInteractivity, allArcs, containers)
@@ -274,9 +283,7 @@ function removeHighlights(allApps, allArcs) {
 function setupInteractivity(allApps, allArcs, containers) {
     allApps
         .on("mouseover.node.debug", (d) => console.log(
-            d.milestone.date,
             d.app.name,
-            d.milestone.category.name,
             d))
         .on("mouseover.node.highlight", (d) => highlightNodes(allApps, allArcs, d))
         .on("mouseleave.node.removeHighlight", () => removeHighlights(allApps, allArcs))
@@ -304,6 +311,11 @@ export function draw(elemSelector,
 
         const allArcs = drawArcs(scales, containers, arcData);
         const allApps = drawApps(scales, containers, nodeData, allArcs);
+
+        return {
+            allAppsSelection: allApps,
+            allArcsSelection: allArcs
+        };
     };
 
     redraw();
