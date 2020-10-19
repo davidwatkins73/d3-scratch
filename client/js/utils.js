@@ -2,6 +2,11 @@ import {pairs} from "d3-array";
 import {forceCollide, forceManyBody, forceSimulation, forceY} from "d3-force";
 
 
+/**
+ * Randomly pick an element from the given array
+ * @param xs
+ * @returns {*}
+ */
 export function randomPick(xs) {
     if (!xs) {
         throw new Error("Cannot pick from a null set of options");
@@ -13,6 +18,12 @@ export function randomPick(xs) {
 }
 
 
+/**
+ * Pick a random date between the two points.
+ * @param from
+ * @param to
+ * @returns {Date}
+ */
 export function getRandomDate(from, to) {
     const fromTime = from.getTime();
     const toTime = to.getTime();
@@ -20,6 +31,14 @@ export function getRandomDate(from, to) {
 }
 
 
+/**
+ * Uses a force simulation to push nodes away from each other
+ * on the y axis.  This prevents nodes overlapping and aids
+ * in readability.
+ *
+ * @param scales
+ * @param nodeData
+ */
 function layoutApps(scales, nodeData) {
     const byCategory = _.groupBy(nodeData, d => d.milestone.category.id);
 
@@ -50,6 +69,7 @@ export function mkNodeData(scales, data = []) {
     layoutApps(scales, nodeData);
     return nodeData;
 }
+
 
 export function mkArcData(data = []) {
     return _
