@@ -1,4 +1,4 @@
-import {select} from "d3-selection";
+import {mouse, select} from "d3-selection";
 import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {extent} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
@@ -31,6 +31,26 @@ const colors = {
     }
 };
 
+
+function showTooltip(tooltip, d, mx, my) {
+    tooltip
+        .html(`<h5>${d.app.name}</h5>`)
+        .style("left", (mx + 70) + "px")
+        .style("top", (my - 2) + "px")
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION * 2))
+        .style("opacity", 1);
+}
+
+
+function hideTooltip(tooltip) {
+    tooltip
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION * 2))
+        .style("opacity", 0);
+}
 
 
 function drawApps(scales, elem, nodeData = []) {
@@ -106,10 +126,21 @@ function setupContainers(elemSelector = '#viz') {
         .append("g")
         .classed("apps", true);
 
+    const tooltip = select(elemSelector)
+        .append("div")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+
     return {
         svg,
         arcs,
-        apps
+        apps,
+        tooltip
     };
 }
 
@@ -229,9 +260,25 @@ function removeHighlights(allApps, allArcs) {
 }
 
 
+function setupInteractivity(allApps, allArcs, containers) {
+    allApps
+        .on("mouseover.debug", (d) => console.log(
+            d.milestone.date,
+            d.app.name,
+            d.milestone.category.name))
+        .on("mouseover.highlight", (d) => highlightAppsAndArcs(allApps, allArcs, d))
+        .on("mouseleave.removeHighlight", () => removeHighlights(allApps, allArcs))
+        .on("mouseover.popover", function (d) {
+            const m = mouse(this);
+            showTooltip(containers.tooltip, d, m[0], m[1]);
+        })
+        .on("mouseleave.popover", () => hideTooltip(containers.tooltip));
+}
+
+
 export function draw(elemSelector,
-                      rawData = [],
-                      categories = []) {
+                     rawData = [],
+                     categories = []) {
     const scales = mkScales(rawData, categories);
     const containers = setupContainers(elemSelector);
 
@@ -239,17 +286,9 @@ export function draw(elemSelector,
 
     const redraw = (updatedRawData = rawData) => {
         const updatedData = prepareData(scales, updatedRawData, categories);
-
         const allApps = drawApps(scales, containers.apps, updatedData.nodeData, redraw);
         const allArcs = drawArcs(scales, containers.arcs, updatedData.arcData, redraw);
-
-        allApps
-            .on("mouseover.debug", (d) => console.log(
-                d.milestone.date,
-                d.app.name,
-                d.milestone.category.name))
-            .on("mouseover.highlight", (d) => highlightAppsAndArcs(allApps, allArcs, d))
-            .on("mouseleave.removeHighlight", () => removeHighlights(allApps, allArcs));
+        setupInteractivity(allApps, allArcs, containers);
     };
 
     redraw(rawData);
