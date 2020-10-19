@@ -1,5 +1,5 @@
-import {extent, pairs} from "d3-array";
-import {scaleBand, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
+import {pairs} from "d3-array";
+import {forceCollide, forceManyBody, forceSimulation, forceY} from "d3-force";
 
 
 export function randomPick(xs) {
@@ -20,21 +20,53 @@ export function getRandomDate(from, to) {
 }
 
 
-export function mkNodeData(data = []) {
-    return _.flatMap(
-        data,
-        d => _.map(
-            d.milestones,
-            m => ({app: d.app, milestone: m})));
+function layoutApps(scales, nodeData) {
+    const byCategory = _.groupBy(nodeData, d => d.milestone.category.id);
+
+    _.forEach(byCategory, (v, k) => {
+        const simulation = forceSimulation(v)
+            .force("y", forceY(scales.y(k)))
+            .force(
+                "collide",
+                forceCollide()
+                    .radius(d => scales.appSize(d.app.size) * 2 + 6))
+            .force("manyBody", forceManyBody().strength(-15))
+            .stop();
+
+        for (let i = 0; i < 200; ++i) {
+            simulation.tick();
+        }
+    });
 }
 
 
+export function mkNodeData(scales, data = []) {
+    const nodeData = _
+        .flatMap(
+            data,
+            d => _.map(
+                d.milestones,
+                m => ({app: d.app, milestone: m})))
+    layoutApps(scales, nodeData);
+    return nodeData;
+}
+
 export function mkArcData(data = []) {
-    return _.flatMap(
-        data,
-        d => pairs(
-            d.milestones,
-            (m1, m2) => ({app: d.app, m1, m2})));
+    return _
+        .chain(data)
+        .groupBy(d => d.app.id)
+        .flatMap(d => pairs(
+            _.orderBy(d, m => m.milestone.date),
+            (m1, m2) => ({
+                id: `${m1.milestone.id}_${m2.milestone.id}`,
+                app: m1.app,
+                m1: m1.milestone,
+                m2: m2.milestone,
+                y1: m1.y,
+                y2: m2.y
+            })))
+        .filter()
+        .value();
 }
 
 
