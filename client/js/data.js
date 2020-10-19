@@ -20,22 +20,42 @@ export const categories = {
     liftAndShift: {
         id: ctr++,
         name: "Lift & Shift",
-        position: 1
+        position: 10
+    },
+    tweak: {
+        id: ctr++,
+        name: "Tweak",
+        position: 15
     },
     easyRefactor: {
         id: ctr++,
         name: "Refactor",
-        position: 2
+        position: 20
+    },
+    rework: {
+        id: ctr++,
+        name: "Rework",
+        position: 25
     },
     hardRefactor: {
         id: ctr++,
         name: "Hard Refactor",
-        position: 3
+        position: 30
     },
     replatform: {
         id: ctr++,
         name: "Replatform",
-        position: 4
+        position: 40
+    },
+    repurchase: {
+        id: ctr++,
+        name: "Repurchase",
+        position: 50
+    },
+    retire: {
+        id: ctr++,
+        name: "Retire",
+        position: 60
     },
 };
 
@@ -56,62 +76,44 @@ const phases = {
 };
 
 
-const liftAndShift = (phase) => ({
+
+const mkMilestone= (category, phase, name="foo") => ({
     id: ctr++,
-    name: "drop in",
+    name,
     date: mkDate(phase),
-    category: categories.liftAndShift
-});
-
-
-const easyRefactor = (phase) => ({
-    id: ctr++,
-    name: "moderate modifications",
-    date: mkDate(phase),
-    category: categories.easyRefactor
-});
-
-
-const hardRefactor = (phase) => ({
-    id: ctr++,
-    name: "refactor hard",
-    date: mkDate(phase),
-    category: categories.hardRefactor
-});
-
-
-const replatform = (phase) => ({
-    id: ctr++,
-    name: "rewrite",
-    date: mkDate(phase),
-    category: categories.replatform
-});
-
+    category
+})
 
 const examplePaths = [
-    () => [ liftAndShift(phases.p1) ],
-    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
-    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
-    () => [ liftAndShift(phases.p1), easyRefactor(phases.p2), replatform(phases.p3)],
-    () => [ liftAndShift(phases.p1) ],
-    () => [ liftAndShift(phases.p2) ],
-    () => [ liftAndShift(phases.p2) ],
-    () => [ liftAndShift(phases.p1), hardRefactor(phases.p2) ],
-    () => [ liftAndShift(phases.p1), replatform(phases.p3) ],
-    () => [ easyRefactor(phases.p2), replatform(phases.p3) ],
-    () => [ easyRefactor(phases.p1) ],
-    () => [ easyRefactor(phases.p1) ],
-    () => [ easyRefactor(phases.p2) ],
-    () => [ easyRefactor(phases.p2) ],
-    () => [ easyRefactor(phases.p3) ],
-    () => [ hardRefactor(phases.p1) ],
-    () => [ hardRefactor(phases.p2) ],
-    () => [ hardRefactor(phases.p2) ],
-    () => [ hardRefactor(phases.p3) ],
-    () => [ hardRefactor(phases.p3) ],
-    () => [ replatform(phases.p2) ],
-    () => [ replatform(phases.p3) ],
-    () => [ replatform(phases.p3) ]
+    () => [ mkMilestone(categories.liftAndShift, phases.p1) ],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1), mkMilestone(categories.easyRefactor, phases.p2), mkMilestone(categories.replatform, phases.p3)],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1), mkMilestone(categories.easyRefactor, phases.p2), mkMilestone(categories.replatform, phases.p3)],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1), mkMilestone(categories.easyRefactor, phases.p2), mkMilestone(categories.replatform, phases.p3)],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1) ],
+    () => [ mkMilestone(categories.liftAndShift, phases.p2) ],
+    () => [ mkMilestone(categories.liftAndShift, phases.p2) ],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1), mkMilestone(categories.hardRefactor, phases.p2) ],
+    () => [ mkMilestone(categories.liftAndShift, phases.p1), mkMilestone(categories.replatform, phases.p3) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p2), mkMilestone(categories.replatform, phases.p3) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p1) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p1) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p2) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p2) ],
+    () => [ mkMilestone(categories.easyRefactor, phases.p3) ],
+    () => [ mkMilestone(categories.hardRefactor, phases.p1) ],
+    () => [ mkMilestone(categories.tweak, phases.p1) ],
+    () => [ mkMilestone(categories.tweak, phases.p2) ],
+    () => [ mkMilestone(categories.rework, phases.p1) ],
+    () => [ mkMilestone(categories.rework, phases.p2) ],
+    () => [ mkMilestone(categories.hardRefactor, phases.p2) ],
+    () => [ mkMilestone(categories.hardRefactor, phases.p3) ],
+    () => [ mkMilestone(categories.hardRefactor, phases.p3) ],
+    () => [ mkMilestone(categories.repurchase, phases.p2) ],
+    () => [ mkMilestone(categories.repurchase, phases.p3) ],
+    () => [ mkMilestone(categories.replatform, phases.p2) ],
+    () => [ mkMilestone(categories.replatform, phases.p3) ],
+    () => [ mkMilestone(categories.replatform, phases.p3) ],
+    () => [ mkMilestone(categories.retire, phases.p1) ]
 ];
 
 

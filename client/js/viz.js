@@ -39,7 +39,7 @@ function showTooltip(tooltip, d, mx, my) {
         .style("top", (my - 2) + "px")
         .transition(transition()
             .ease(easeLinear)
-            .duration(ANIMATION_DURATION * 2))
+            .duration(ANIMATION_DURATION))
         .style("opacity", 1);
 }
 
@@ -48,42 +48,47 @@ function hideTooltip(tooltip) {
     tooltip
         .transition(transition()
             .ease(easeLinear)
-            .duration(ANIMATION_DURATION * 2))
+            .duration(ANIMATION_DURATION))
         .style("opacity", 0);
 }
 
 
-function drawApps(scales, elem, nodeData = []) {
-    const apps = elem
+function drawApps(scales, containers, nodeData = [], allArcs) {
+    const apps = containers.apps
         .selectAll("circle.app")
-        .data(nodeData);
+        .data(nodeData, d => `${d.app.id}_${d.milestone.id}`);
 
     const newApps = apps
         .enter()
         .append("circle")
         .classed("app", true)
         .attr("fill", d => scales.color(d.app.id))
+        .attr("r", 1)
         .attr("stroke", d => scales.color(d.app.id));
 
     apps.exit()
         .transition(transition()
             .ease(easeLinear)
-            .duration(ANIMATION_DURATION * 2))
-        .style("opacity", 0)
+            .duration(ANIMATION_DURATION))
+        .attr("r", 0)
         .remove();
 
     return apps
         .merge(newApps)
-        .attr("r", d => scales.appSize(d.app.size))
         .attr("cx", d => scales.x(d.milestone.date))
-        .attr("cy", d => d.y + scales.y.bandwidth() / 2);
+        .attr("cy", d => d.y + scales.y.bandwidth() / 2)
+        .call(setupInteractivity, allArcs, containers)
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .attr("r", d => scales.appSize(d.app.size))
 }
 
 
 function drawArcs(scales,
-                  elem,
+                  containers,
                   arcData = []) {
-    const arcs = elem
+    const arcs = containers.arcs
         .selectAll("path.arc")
         .data(arcData, d => d.id);
 
@@ -92,12 +97,12 @@ function drawArcs(scales,
         .append("path")
         .classed("arc", true)
         .attr("fill", "none")
-        .attr("stroke", colors.arc.normal)
+        .attr("stroke", colors.arc.normal);
 
     arcs.exit()
         .transition(transition()
             .ease(easeLinear)
-            .duration(ANIMATION_DURATION * 2))
+            .duration(ANIMATION_DURATION))
         .style("opacity", 0)
         .remove();
 
@@ -109,7 +114,8 @@ function drawArcs(scales,
             scales.x(d.m2.date),
             d.y2 + scales.y.bandwidth() / 2,
             2
-        ));
+        ))
+        .attr("opacity", 1);
 }
 
 
@@ -230,7 +236,7 @@ function prepareData(scales, rawData, categories) {
 }
 
 
-function highlightAppsAndArcs(allApps, allArcs, node) {
+function highlightNodes(allApps, allArcs, node) {
     allApps
         .transition(transition()
             .ease(easeLinear)
@@ -267,17 +273,18 @@ function removeHighlights(allApps, allArcs) {
 
 function setupInteractivity(allApps, allArcs, containers) {
     allApps
-        .on("mouseover.debug", (d) => console.log(
+        .on("mouseover.node.debug", (d) => console.log(
             d.milestone.date,
             d.app.name,
-            d.milestone.category.name))
-        .on("mouseover.highlight", (d) => highlightAppsAndArcs(allApps, allArcs, d))
-        .on("mouseleave.removeHighlight", () => removeHighlights(allApps, allArcs))
-        .on("mouseover.popover", function (d) {
+            d.milestone.category.name,
+            d))
+        .on("mouseover.node.highlight", (d) => highlightNodes(allApps, allArcs, d))
+        .on("mouseleave.node.removeHighlight", () => removeHighlights(allApps, allArcs))
+        .on("mouseover.node.popover", function (d) {
             const m = mouse(this);
             showTooltip(containers.tooltip, d, m[0], m[1]);
         })
-        .on("mouseleave.popover", () => hideTooltip(containers.tooltip));
+        .on("mouseleave.node.popover", () => hideTooltip(containers.tooltip));
 }
 
 
@@ -292,9 +299,11 @@ export function draw(elemSelector,
     drawAxes(scales, containers.svg, categories);
 
     const redraw = (filterFn = () => true) => {
-        const allApps = drawApps(scales, containers.apps, _.filter(data.nodeData, filterFn));
-        const allArcs = drawArcs(scales, containers.arcs, _.filter(data.arcData, filterFn));
-        setupInteractivity(allApps, allArcs, containers);
+        const arcData = _.filter(data.arcData, filterFn);
+        const nodeData = _.filter(data.nodeData, filterFn);
+
+        const allArcs = drawArcs(scales, containers, arcData);
+        const allApps = drawApps(scales, containers, nodeData, allArcs);
     };
 
     redraw();

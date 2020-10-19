@@ -49,7 +49,7 @@ function layoutApps(scales, nodeData) {
                 "collide",
                 forceCollide()
                     .radius(d => scales.appSize(d.app.size) * 2 + 6))
-            .force("manyBody", forceManyBody().strength(-15))
+            .force("manyBody", forceManyBody().strength(-10))
             .stop();
 
         for (let i = 0; i < 200; ++i) {
