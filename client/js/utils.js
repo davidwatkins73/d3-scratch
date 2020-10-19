@@ -48,7 +48,7 @@ function layoutApps(scales, nodeData) {
             .force(
                 "collide",
                 forceCollide()
-                    .radius(d => scales.appSize(d.app.size) * 2 + 6))
+                    .radius(d => scales.nodeSize(d.app.size) * 2 + 6))
             .force("manyBody", forceManyBody().strength(-10))
             .stop();
 

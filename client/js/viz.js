@@ -12,6 +12,7 @@ const ANIMATION_DURATION = 200;
 const MAX_NODE_SIZE = 10;
 const MIN_NODE_SIZE = 2;
 
+
 const margins = {
     top: 30,
     left: 80,
@@ -19,10 +20,12 @@ const margins = {
     bottom: 50
 };
 
+
 const dimensions = {
     w: 1000,
     h: 800
 };
+
 
 const colors = {
     arc: {
@@ -34,7 +37,14 @@ const colors = {
 
 function showTooltip(tooltip, d, mx, my) {
     tooltip
-        .html(`<h5>${d.app.name}</h5>`)
+        .html(`
+            <b>${d.app.name}</b>
+            <p>
+                ${d.milestone.category.name} 
+                -
+                ${timeFormat("%-m/%-d/%Y")(d.milestone.date)}
+            </p>
+        `)
         .style("left", (mx + 70) + "px")
         .style("top", (my - 2) + "px")
         .transition(transition()
@@ -53,36 +63,36 @@ function hideTooltip(tooltip) {
 }
 
 
-function drawApps(scales, containers, nodeData = [], allArcs) {
-    const apps = containers.apps
-        .selectAll("g.app")
+function drawNodes(scales, containers, nodeData = [], allArcs) {
+    const nodes = containers.nodes
+        .selectAll("g.node")
         .data(nodeData, d => `${d.app.id}_${d.milestone.id}`);
 
-    const newApps = apps
+    const newNodes = nodes
         .enter()
         .append("g")
-        .classed("app", true);
+        .classed("node", true);
 
-    newApps
+    newNodes
         .append("circle")
         .attr("fill", d => scales.color(d.app.id))
         .attr("r", 1)
         .attr("stroke", d => scales.color(d.app.id));
 
-    apps.exit()
+    nodes.exit()
         .select("circle")
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
         .attr("r", 0);
 
-    apps.exit()
+    nodes.exit()
         .transition()
         .delay(ANIMATION_DURATION)
         .remove();
 
-    return apps
-        .merge(newApps)
+    return nodes
+        .merge(newNodes)
         .select("circle")
         .attr("cx", d => scales.x(d.milestone.date))
         .attr("cy", d => d.y + scales.y.bandwidth() / 2)
@@ -90,7 +100,7 @@ function drawApps(scales, containers, nodeData = [], allArcs) {
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
-        .attr("r", d => scales.appSize(d.app.size))
+        .attr("r", d => scales.nodeSize(d.app.size))
 }
 
 
@@ -142,24 +152,26 @@ function setupContainers(elemSelector = '#viz') {
         .append("g")
         .classed("arcs", true);
 
-    const apps = graph
+    const nodes = graph
         .append("g")
-        .classed("apps", true);
+        .classed("nodes", true);
 
     const tooltip = select(elemSelector)
         .append("div")
+        .style("font-size", "x-small")
         .style("opacity", 0)
         .style("position", "absolute")
         .style("background-color", "white")
         .style("border", "solid")
-        .style("border-width", "2px")
-        .style("border-radius", "5px")
+        .style("border-color", "#aaa")
+        .style("border-width", "1px")
+        .style("border-radius", "3px")
         .style("padding", "5px")
 
     return {
         svg,
         arcs,
-        apps,
+        nodes,
         tooltip
     };
 }
@@ -191,7 +203,7 @@ function mkScaleX(data) {
 }
 
 
-function mkScaleAppSize(data) {
+function mkScaleNodeSize(data) {
     const sizeExtent = extent(
         data,
         d => d.app.size);
@@ -207,7 +219,7 @@ function mkScaleAppSize(data) {
     return {
         x: mkScaleX(rawData),
         y: mkScaleY(categories),
-        appSize: mkScaleAppSize(rawData),
+        nodeSize: mkScaleNodeSize(rawData),
         color: scaleOrdinal(schemeCategory20c)
     };
 }
@@ -310,10 +322,10 @@ export function draw(elemSelector,
         const nodeData = _.filter(data.nodeData, filterFn);
 
         const allArcs = drawArcs(scales, containers, arcData);
-        const allApps = drawApps(scales, containers, nodeData, allArcs);
+        const allNodes = drawNodes(scales, containers, nodeData, allArcs);
 
         return {
-            allAppsSelection: allApps,
+            allNodesSelection: allNodes,
             allArcsSelection: allArcs
         };
     };
