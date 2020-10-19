@@ -53,12 +53,10 @@ function hideTooltip(tooltip) {
 }
 
 
-function drawApps(scales, elem, nodeData = [], nodeFilter = () => true) {
+function drawApps(scales, elem, nodeData = []) {
     const apps = elem
         .selectAll("circle.app")
-        .data(
-            _.filter(nodeData, nodeFilter),
-            d => d.milestone.id)
+        .data(nodeData);
 
     const newApps = apps
         .enter()
@@ -70,25 +68,20 @@ function drawApps(scales, elem, nodeData = [], nodeFilter = () => true) {
     apps.exit()
         .remove();
 
-    const allApps = apps
+    return apps
         .merge(newApps)
         .attr("r", d => scales.appSize(d.app.size))
         .attr("cx", d => scales.x(d.milestone.date))
         .attr("cy", d => d.y + scales.y.bandwidth() / 2);
-
-    return allApps;
 }
 
 
 function drawArcs(scales,
                   elem,
-                  arcData = [],
-                  filterFn = () => true) {
+                  arcData = []) {
     const arcs = elem
         .selectAll("path.arc")
-        .data(
-            _.filter(arcData, filterFn),
-            d => d.id);
+        .data(arcData, d => d.id);
 
     const newArcs = arcs
         .enter()
@@ -97,7 +90,10 @@ function drawArcs(scales,
         .attr("fill", "none")
         .attr("stroke", colors.arc.normal)
 
-    const allArcs = arcs
+    arcs.exit()
+        .remove();
+
+    return arcs
         .merge(newArcs)
         .attr("d", d => mkCurvedLine(
             scales.x(d.m1.date),
@@ -106,11 +102,6 @@ function drawArcs(scales,
             d.y2 + scales.y.bandwidth() / 2,
             2
         ));
-
-    arcs.exit()
-        .remove();
-
-    return allArcs;
 }
 
 
@@ -293,8 +284,8 @@ export function draw(elemSelector,
     drawAxes(scales, containers.svg, categories);
 
     const redraw = (filterFn = () => true) => {
-        const allApps = drawApps(scales, containers.apps, data.nodeData, filterFn);
-        const allArcs = drawArcs(scales, containers.arcs, data.arcData, filterFn);
+        const allApps = drawApps(scales, containers.apps, _.filter(data.nodeData, filterFn));
+        const allArcs = drawArcs(scales, containers.arcs, _.filter(data.arcData, filterFn));
         setupInteractivity(allApps, allArcs, containers);
     };
 
