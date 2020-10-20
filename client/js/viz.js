@@ -3,7 +3,7 @@ import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from
 import {extent} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
 import {timeFormat} from "d3-time-format";
-import {easeLinear} from "d3-ease";
+import {easeCubic, easeLinear} from "d3-ease";
 import {transition} from "d3-transition";
 import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
 import {symbol, symbolCross} from "d3-shape";
@@ -36,6 +36,16 @@ const colors = {
 };
 
 
+const classes = {
+    nodeGlyph: "nodeGlyph",
+    removalGlyph: "removalGlyph",
+    nodes: "nodes",
+    node: "node",
+    arcs: "arcs",
+    arc: "arc"
+};
+
+
 function showTooltip(tooltip, d, x, y) {
     tooltip
         .html(`
@@ -64,46 +74,66 @@ function hideTooltip(tooltip) {
 }
 
 
+function drawNodeRemovalGlyph(newNodes, allNodes) {
+
+    const crossPath = symbol().type(symbolCross).size(100);
+
+    newNodes
+        .append("path")
+        .classed(classes.removalGlyph, true)
+        .style("transform", "rotate(0deg) scale(0)")
+        .attr("d", crossPath)
+        .attr("stroke", "white")
+        .attr("fill", "red")
+        .attr("opacity", 0.9)
+        .attr("visibility", "hidden");
+
+    allNodes
+        .select(`path.${classes.removalGlyph}`)
+        .filter(d => _.get(d, ["dynProps", "isRemoved"], false))
+        .attr("visibility", "visible")
+        .transition(transition()
+            .ease(easeCubic)
+            .duration(ANIMATION_DURATION * 2))
+        .style("transform", "rotate(45deg) scale(1.5)");
+
+    allNodes
+        .select(`path.${classes.removalGlyph}`)
+        .filter(d => ! _.get(d, ["dynProps", "isRemoved"], false))
+        .style("transform", "rotate(0deg) scale(0)")
+        .attr("visibility", "hidden")
+
+}
+
+
 function drawNodes(scales, containers, nodeData = [], allArcs) {
     const nodes = containers.nodes
-        .selectAll("g.node")
+        .selectAll(`g.${classes.node}`)
         .data(nodeData, d => `${d.app.id}_${d.milestone.id}`);
 
     const newNodes = nodes
         .enter()
         .append("g")
-        .classed("node", true)
+        .classed(classes.node, true)
         .attr("pointer-events", "bounding-box");
-
 
     newNodes
         .append("circle")
-        .classed("glyph", true)
+        .classed(classes.nodeGlyph, true)
         .attr("fill", d => scales.color(d.app.id))
         .attr("r", 1)
         .attr("stroke", d => scales.color(d.app.id));
 
-    const crossPath = symbol().type(symbolCross).size(100);
-    console.log(crossPath)
-
-    newNodes
-        .filter(d => d.app.name.startsWith("p"))
-        .append("path")
-        .attr("transform", "rotate(45)")
-        .attr("d", crossPath)
-        .attr("stroke", "white")
-        .attr("fill", "red")
-        .attr("opacity", 0.6)
 
     nodes.exit()
-        .select("circle.glyph")
+        .select(`circle.${classes.nodeGlyph}`)
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
         .attr("r", 0);
 
     nodes.exit()
-        .select("path")
+        .select(`path.${classes.removalGlyph}`)
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
@@ -120,11 +150,13 @@ function drawNodes(scales, containers, nodeData = [], allArcs) {
 
     allNodes
         .call(setupInteractivity, allArcs, containers)
-        .select("circle.glyph")
+        .select(`circle.${classes.nodeGlyph}`)
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
         .attr("r", d => scales.nodeSize(d.app.size));
+
+    drawNodeRemovalGlyph(newNodes, allNodes);
 
     return allNodes;
 }
@@ -140,7 +172,7 @@ function drawArcs(scales,
     const newArcs = arcs
         .enter()
         .append("path")
-        .classed("arc", true)
+        .classed(classes.arc, true)
         .attr("fill", "none")
         .attr("stroke", colors.arc.normal);
 
@@ -176,11 +208,11 @@ function setupContainers(elemSelector = '#viz') {
 
     const arcs = graph
         .append("g")
-        .classed("arcs", true);
+        .classed(classes.arcs, true);
 
     const nodes = graph
         .append("g")
-        .classed("nodes", true);
+        .classed(classes.nodes, true);
 
     const tooltip = select(elemSelector)
         .append("div")
@@ -193,6 +225,7 @@ function setupContainers(elemSelector = '#viz') {
         .style("border-width", "1px")
         .style("border-radius", "3px")
         .style("padding", "5px")
+        .style("pointer-events", "none");  // stops the popover intercepting other mouseovers
 
     return {
         svg,
@@ -340,9 +373,19 @@ export function draw(elemSelector,
 
     drawAxes(scales, containers.svg, categories);
 
-    const redraw = (filterFn = () => true) => {
-        const arcData = _.filter(data.arcData, filterFn);
-        const nodeData = _.filter(data.nodeData, filterFn);
+    const redraw = (filterFn = () => true,
+                    dynPropProviderFn = d => {}) => {
+        const arcData = _
+            .chain(data.arcData)
+            .filter(filterFn)
+            .map(d => Object.assign({}, d, { dynProps: dynPropProviderFn(d) }))
+            .value();
+
+        const nodeData = _
+            .chain(data.nodeData)
+            .filter(filterFn)
+            .map(d => Object.assign({}, d, { dynProps: dynPropProviderFn(d) }))
+            .value();
 
         const allArcs = drawArcs(scales, containers, arcData);
         const allNodes = drawNodes(scales, containers, nodeData, allArcs);
