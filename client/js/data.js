@@ -22,21 +22,21 @@ export const categories = {
         name: "Lift & Shift",
         position: 10
     },
-    tweak: {
-        id: ctr++,
-        name: "Tweak",
-        position: 15
-    },
+    // tweak: {
+    //     id: ctr++,
+    //     name: "Tweak",
+    //     position: 15
+    // },
     easyRefactor: {
         id: ctr++,
         name: "Refactor",
         position: 20
     },
-    rework: {
-        id: ctr++,
-        name: "Rework",
-        position: 25
-    },
+    // rework: {
+    //     id: ctr++,
+    //     name: "Rework",
+    //     position: 25
+    // },
     hardRefactor: {
         id: ctr++,
         name: "Hard Refactor",
@@ -47,16 +47,16 @@ export const categories = {
         name: "Replatform",
         position: 40
     },
-    repurchase: {
-        id: ctr++,
-        name: "Repurchase",
-        position: 50
-    },
-    retire: {
-        id: ctr++,
-        name: "Retire",
-        position: 60
-    },
+    // repurchase: {
+    //     id: ctr++,
+    //     name: "Repurchase",
+    //     position: 50
+    // },
+    // retire: {
+    //     id: ctr++,
+    //     name: "Retire",
+    //     position: 60
+    // },
 };
 
 
@@ -101,19 +101,19 @@ const examplePaths = [
     () => [ mkMilestone(categories.easyRefactor, phases.p2) ],
     () => [ mkMilestone(categories.easyRefactor, phases.p3) ],
     () => [ mkMilestone(categories.hardRefactor, phases.p1) ],
-    () => [ mkMilestone(categories.tweak, phases.p1) ],
-    () => [ mkMilestone(categories.tweak, phases.p2) ],
-    () => [ mkMilestone(categories.rework, phases.p1) ],
-    () => [ mkMilestone(categories.rework, phases.p2) ],
+    // () => [ mkMilestone(categories.tweak, phases.p1) ],
+    // () => [ mkMilestone(categories.tweak, phases.p2) ],
+    // () => [ mkMilestone(categories.rework, phases.p1) ],
+    // () => [ mkMilestone(categories.rework, phases.p2) ],
     () => [ mkMilestone(categories.hardRefactor, phases.p2) ],
     () => [ mkMilestone(categories.hardRefactor, phases.p3) ],
     () => [ mkMilestone(categories.hardRefactor, phases.p3) ],
-    () => [ mkMilestone(categories.repurchase, phases.p2) ],
-    () => [ mkMilestone(categories.repurchase, phases.p3) ],
+    // () => [ mkMilestone(categories.repurchase, phases.p2) ],
+    // () => [ mkMilestone(categories.repurchase, phases.p3) ],
     () => [ mkMilestone(categories.replatform, phases.p2) ],
     () => [ mkMilestone(categories.replatform, phases.p3) ],
     () => [ mkMilestone(categories.replatform, phases.p3) ],
-    () => [ mkMilestone(categories.retire, phases.p1) ]
+    // () => [ mkMilestone(categories.retire, phases.p1) ]
 ];
 
 
@@ -129,6 +129,4 @@ function mkAppData() {
 }
 
 
-export const data = _.map(
-    _.range(100),
-    mkAppData);
+export const data = _.map(_.range(150), mkAppData);

@@ -1,4 +1,4 @@
-import {mouse, select} from "d3-selection";
+import {event, mouse, select} from "d3-selection";
 import {scaleBand, scaleLinear, scaleOrdinal, scaleTime, schemeCategory20c} from "d3-scale";
 import {extent} from "d3-array";
 import {axisBottom, axisLeft} from "d3-axis";
@@ -6,6 +6,7 @@ import {timeFormat} from "d3-time-format";
 import {easeLinear} from "d3-ease";
 import {transition} from "d3-transition";
 import {mkArcData, mkCurvedLine, mkNodeData} from "./utils";
+import {symbol, symbolCross} from "d3-shape";
 
 // viz
 const ANIMATION_DURATION = 200;
@@ -35,7 +36,7 @@ const colors = {
 };
 
 
-function showTooltip(tooltip, d, mx, my) {
+function showTooltip(tooltip, d, x, y) {
     tooltip
         .html(`
             <b>${d.app.name}</b>
@@ -45,8 +46,8 @@ function showTooltip(tooltip, d, mx, my) {
                 ${timeFormat("%-m/%-d/%Y")(d.milestone.date)}
             </p>
         `)
-        .style("left", (mx + 70) + "px")
-        .style("top", (my - 2) + "px")
+        .style("left", `${x}px`)
+        .style("top", `${y}px`)
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
@@ -71,36 +72,61 @@ function drawNodes(scales, containers, nodeData = [], allArcs) {
     const newNodes = nodes
         .enter()
         .append("g")
-        .classed("node", true);
+        .classed("node", true)
+        .attr("pointer-events", "bounding-box");
+
 
     newNodes
         .append("circle")
+        .classed("glyph", true)
         .attr("fill", d => scales.color(d.app.id))
         .attr("r", 1)
         .attr("stroke", d => scales.color(d.app.id));
 
+    const crossPath = symbol().type(symbolCross).size(100);
+    console.log(crossPath)
+
+    newNodes
+        .filter(d => d.app.name.startsWith("p"))
+        .append("path")
+        .attr("transform", "rotate(45)")
+        .attr("d", crossPath)
+        .attr("stroke", "white")
+        .attr("fill", "red")
+        .attr("opacity", 0.6)
+
     nodes.exit()
-        .select("circle")
+        .select("circle.glyph")
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
         .attr("r", 0);
 
     nodes.exit()
+        .select("path")
+        .transition(transition()
+            .ease(easeLinear)
+            .duration(ANIMATION_DURATION))
+        .attr("opacity", 0);
+
+    nodes.exit()
         .transition()
         .delay(ANIMATION_DURATION)
         .remove();
 
-    return nodes
+    const allNodes = nodes
         .merge(newNodes)
-        .select("circle")
-        .attr("cx", d => scales.x(d.milestone.date))
-        .attr("cy", d => d.y + scales.y.bandwidth() / 2)
+        .attr("transform", d => `translate(${scales.x(d.milestone.date)}, ${d.y + scales.y.bandwidth() / 2})`)
+
+    allNodes
         .call(setupInteractivity, allArcs, containers)
+        .select("circle.glyph")
         .transition(transition()
             .ease(easeLinear)
             .duration(ANIMATION_DURATION))
-        .attr("r", d => scales.nodeSize(d.app.size))
+        .attr("r", d => scales.nodeSize(d.app.size));
+
+    return allNodes;
 }
 
 
@@ -299,10 +325,7 @@ function setupInteractivity(allApps, allArcs, containers) {
             d))
         .on("mouseover.node.highlight", (d) => highlightNodes(allApps, allArcs, d))
         .on("mouseleave.node.removeHighlight", () => removeHighlights(allApps, allArcs))
-        .on("mouseover.node.popover", function (d) {
-            const m = mouse(this);
-            showTooltip(containers.tooltip, d, m[0], m[1]);
-        })
+        .on("mouseover.node.popover", (d) => showTooltip(containers.tooltip, d, event.pageX + 20, event.pageY - 20))
         .on("mouseleave.node.popover", () => hideTooltip(containers.tooltip));
 }
 
