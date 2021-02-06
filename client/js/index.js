@@ -84,9 +84,10 @@ function drawNodes(ctx, data) {
         .attr("fill", "#cbf7f2")
         .attr("r", 1);
 
+    const trans = ctx.mkTransition();
     const allNodes = nodes
         .merge(newNodes)
-        .transition(ctx.mkTransition())
+        .transition(trans)
         .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`);
 
     allNodes
@@ -97,12 +98,11 @@ function drawNodes(ctx, data) {
             else if (d.children) { return "#b1d9f2" }
             else { return "#d8e8f8"; }
         })
-        .transition(ctx.mkTransition())
+        .transition(trans)
         .attr("r", d => ctx.nodeScale(d.value));
 
     allNodes
         .selectAll("text")
-        .transition(ctx.mkTransition())
         .call(ctx.tweaker.label, ctx);
 
     // -- exits
@@ -110,18 +110,18 @@ function drawNodes(ctx, data) {
     nodes
         .exit()
         .selectAll("circle")
-        .transition(ctx.mkTransition(100))
+        .transition(ctx.mkTransition())
         .attr("r", 0)
 
     nodes
         .exit()
         .selectAll("text")
-        .transition(ctx.mkTransition(100))
+        .transition(ctx.mkTransition())
         .attr("stroke", "white")
 
     nodes
         .exit()
-        .transition(ctx.mkTransition(100))
+        .transition(ctx.mkTransition())
         .remove();
 }
 
@@ -324,10 +324,10 @@ function boot(rawData) {
         treemapLayout,
         nodeScale,
         hierData,
-        mkTransition: (speed = 400) => d3
+        mkTransition: (speed = 700) => d3
             .transition()
-            .duration(speed)
-            .ease(d3.easeCubicInOut),
+            .ease(d3.easeExpOut)
+            .duration(speed),
         tweaker: TWEAKERS.leftRight,
         working: hierData,
         direction: "DESCEND",
