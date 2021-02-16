@@ -43,7 +43,12 @@ export function disableParent(d) {
 }
 
 
-export function disableChildren(d) {
+export function mkEdgeId(d) {
+    return d.data.parentId + "_" + d.data.id;
+}
+
+
+function disableChildren(d) {
     if (d.children) {
         d.data._children = d.children;
         delete d.children;
@@ -52,7 +57,7 @@ export function disableChildren(d) {
 }
 
 
-export function enableChildren(d) {
+function enableChildren(d) {
     if (d.data._children) {
         d.children = d.data._children;
         delete d.data._children;
@@ -61,7 +66,7 @@ export function enableChildren(d) {
 }
 
 
-export function enableParent(d) {
+function enableParent(d) {
     if (d.data._parent) {
         d.parent = d.data._parent;
         delete d.data._parent;
@@ -69,7 +74,3 @@ export function enableParent(d) {
     return d;
 }
 
-
-export function mkEdgeId(d) {
-    return d.data.parentId + "_" + d.data.id;
-}
