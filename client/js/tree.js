@@ -1,7 +1,5 @@
-export function clip(ctx) {
-    const w = ctx.working;
-
-    disableParent(w);
+export function clip(tree, maxDepth = 3) {
+    disableParent(tree);
 
     const visit = (xs, curDepth = 0) => {
         xs.forEach(x => {
@@ -10,7 +8,7 @@ export function clip(ctx) {
                 // repair parent links
                 enableParent(x);
             }
-            if (curDepth >= ctx.maxDepth) {
+            if (curDepth >= maxDepth) {
                 disableChildren(x);
             } else {
                 enableChildren(x);
@@ -19,9 +17,10 @@ export function clip(ctx) {
         });
     };
 
-    visit([w]);
-    return ctx;
+    visit([tree]);
+    return tree;
 }
+
 
 
 export function hasParents(d) {
