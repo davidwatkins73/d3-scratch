@@ -10,8 +10,8 @@ const TWEAKERS = {
             x: d => d.x,
             y: d => d.y,
             initialTransforms: {
-                ASCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`,
-                DESCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 1.2})`
+                ASCEND: (ctx) => `translate(${ctx.dimensions.w / 1.2} ${ctx.dimensions.h / 2})`,
+                DESCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 2})`
             }
         },
         label: (selection, ctx) => selection

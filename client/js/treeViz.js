@@ -8,7 +8,7 @@ export function setupSvg(dimensions) {
         .append("svg")
         .style("border", "1px solid red")
         .attr("viewBox", `0 0 ${dimensions.w + dimensions.marginLeft + dimensions.marginRight} ${dimensions.h + dimensions.marginTop + dimensions.marginBottom}`  )
-        .attr("width", `100%`)
+        .attr("height", `100%`)
 
     const g = svg
         .append("g")
@@ -35,7 +35,9 @@ function drawNodes(ctx, data) {
         .append("g")
         .classed("node", true)
         .style("cursor", "pointer")
-        .attr("transform", console.log({d: ctx.direction}) || ctx.tweaker.node.initialTransforms[ctx.direction](ctx))
+        .attr("transform", d => d.parent
+            ?  `translate(${ctx.tweaker.node.x(d.parent)} ${ctx.tweaker.node.y(d.parent)})`
+            :  `translate(0 0)`)
         .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d))
         .on("click", d => focus(d, ctx));
 
