@@ -1,12 +1,18 @@
 import {mkEdgeId, sameNode} from "./tree";
 import {focus, mkTransition} from "./commonViz";
+import * as d3 from "d3";
 
 const COLORS = {
     node: {
-        prunedParent: "#98f69c",
-        prunedChildren: "#98f69c",
-        root: "#89caee",
-        normal: "#cef3f3"
+        prunedParent: { fill: "#98f69c", stroke: "#25ae24" },
+        prunedChildren: { fill: "#98f69c", stroke: "#25ae24"},
+        root: { fill: "#89caee", stroke: "#3d74c6"},
+        normal: { fill: "#cef3f3", stroke: "#9dbff6"},
+        ancestor: { fill: "#fc9898", stroke: "#e92929"},
+        ancestorRoot: { fill: "#e92929", stroke: "#e92929"}
+    },
+    edge: {
+        stroke: "#e5e5e5"
     }
 };
 
@@ -23,9 +29,39 @@ export function drawTree(ctx) {
 }
 
 
+function drawAncestors(selection, ctx) {
+    const ancestors = selection
+        .selectAll(".ancestor")
+        .data(d => _.tail(d.allAncestors) || []);
+
+    ancestors
+        .enter()
+        .append("circle")
+        .classed("ancestor", true)
+        .attr("r", 3)
+        .attr("fill", d => d.parent == null
+            ? COLORS.node.ancestorRoot.fill
+            : COLORS.node.ancestor.fill)
+        .attr("stroke", COLORS.node.ancestor.stroke)
+        .attr("stroke-width", 0.5)
+        .attr("transform", (d, i) => `translate(${-10 + (i) * -7}, 0)`)
+        .attr("title", d => d.data.name)
+        .on("click", d => {
+            focus(d, ctx);
+            d3.event.stopPropagation();
+        })
+     .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
+
+
+    ancestors
+        .exit()
+        .remove();
+
+    return ancestors;
+}
+
 
 function drawNodes(ctx, data) {
-    console.log("drawNodes", {data});
     const nodes = ctx
         .viz
         .select(".nodes")
@@ -40,7 +76,7 @@ function drawNodes(ctx, data) {
         .attr("transform", d => d.parent
             ?  `translate(${d.parent.x} ${ctx.tweaker.node.y(d.parent)})`
             :  `translate(0 0)`)
-        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
+        // .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
         .on("click", d => focus(d, ctx));
 
     newNodes
@@ -51,7 +87,6 @@ function drawNodes(ctx, data) {
 
     newNodes
         .append("circle")
-        .attr("stroke", "#56aa9f")
         .attr("stroke-width", 0.5)
         .attr("r", 1);
 
@@ -59,17 +94,16 @@ function drawNodes(ctx, data) {
         .merge(nodes);
 
     allNodes
+        .call(drawAncestors, ctx);
+
+    allNodes
         .select("circle")
-        .style("fill", d => {
-            if (sameNode(ctx.tree, d)) { return COLORS.node.root; }
-            else if (d.prunedChildren) { return COLORS.node.prunedChildren; }
-            else if (d.prunedParent) { return COLORS.node.prunedParent; }
-            else { return COLORS.node.normal; }
-        });
+        .style("stroke", d => determineNodeStroke(d, ctx))
+        .style("fill", d => determineNodeFill(d, ctx));
 
     allNodes
         .select("text")
-        .call(ctx.tweaker.label, ctx);
+        .call(ctx.tweaker.label, ctx)
 
     allNodes
         .transition(mkTransition())
@@ -89,12 +123,6 @@ function drawNodes(ctx, data) {
     exit
         .select("circle")
         .attr("r", 0);
-
-    allNodes
-        .filter(d => d.root)
-        .append("circle")
-        .attr("r", 2)
-        .attr("fill", "red")
 }
 
 
@@ -124,7 +152,7 @@ function drawEdges(ctx, data) {
 
     edges
         .merge(newEdges)
-        .attr("stroke", "#e5e5e5")
+        .attr("stroke", COLORS.edge.stroke)
         .transition(mkTransition())
         .attr("stroke-width", 1)
         .attr("x1", d => ctx.tweaker.node.x(d.parent))
@@ -138,3 +166,20 @@ function nodeTitle(d) {
     return d.data.code || d.data.name;
 }
 
+
+function determineNodeColor(d, ctx) {
+    if (sameNode(ctx.tree, d)) { return COLORS.node.root; }
+    else if (d.prunedChildren) { return COLORS.node.prunedChildren; }
+    else if (d.prunedParent) { return COLORS.node.prunedParent; }
+    else { return COLORS.node.normal; }
+}
+
+
+function determineNodeStroke(d, ctx) {
+    return determineNodeColor(d, ctx).stroke;
+}
+
+
+function determineNodeFill(d, ctx) {
+    return determineNodeColor(d, ctx).fill;
+}
