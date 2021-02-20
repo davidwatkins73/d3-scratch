@@ -8,7 +8,7 @@ const COLORS = {
         root: "#89caee",
         normal: "#cef3f3"
     }
-}
+};
 
 
 export function drawTree(ctx) {
@@ -52,6 +52,7 @@ function drawNodes(ctx, data) {
     newNodes
         .append("circle")
         .attr("stroke", "#56aa9f")
+        .attr("stroke-width", 0.5)
         .attr("r", 1);
 
     const allNodes = newNodes
@@ -61,8 +62,8 @@ function drawNodes(ctx, data) {
         .select("circle")
         .style("fill", d => {
             if (sameNode(ctx.tree, d)) { return COLORS.node.root; }
-            else if (d.pruned) { return COLORS.node.prunedChildren; }
-            else if ( !_.isEmpty(d.allAncestors)) { return COLORS.node.prunedParent; }
+            else if (d.prunedChildren) { return COLORS.node.prunedChildren; }
+            else if (d.prunedParent) { return COLORS.node.prunedParent; }
             else { return COLORS.node.normal; }
         });
 

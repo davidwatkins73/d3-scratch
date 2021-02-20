@@ -20,18 +20,22 @@ export function buildTreeDataFromFlattenedHierarchy(data = []) {
 export function pruneTree(tree, maxDepth = 3) {
     const copy = tree.copy();
     copy.each(n => {
-        n.pruned = false;
+        n.prunedChildren = false;
         const depthDelta = n.depth; // - startDepth;
         if (depthDelta >= maxDepth) {
             if (_.size(n.children) > 0) {
-                n.pruned = true
+                n.prunedChildren = true
             }
             delete n.children;
         }
     });
 
     const allAncestors = tree.ancestors();
-    return Object.assign(copy, {allAncestors});
+    const extraProps = {
+        allAncestors,
+        prunedParent: tree.parent != null
+    };
+    return Object.assign(copy, extraProps);
 }
 
 
@@ -41,7 +45,7 @@ export function sameNode(a, b) {
 
 
 export function mkEdgeId(d) {
-    return d.data.parentId + "_" + d.data.id;
+    return `${d.data.parentId}_${d.data.id}`;
 }
 
 
