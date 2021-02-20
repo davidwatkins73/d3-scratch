@@ -40,14 +40,14 @@ function drawNodes(ctx, data) {
         .attr("transform", d => d.parent
             ?  `translate(${d.parent.x} ${ctx.tweaker.node.y(d.parent)})`
             :  `translate(0 0)`)
-        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d.pruned))
+        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
         .on("click", d => focus(d, ctx));
 
     newNodes
         .append("text")
         .text(d => d.data.name)
         .attr("fill", "black")
-        .attr("font-size", `${ctx.fontSize}px`)
+        .attr("font-size", `${ctx.fontSize}px`);
 
     newNodes
         .append("circle")
@@ -88,7 +88,7 @@ function drawNodes(ctx, data) {
 
     exit
         .select("circle")
-        .attr("r", 0)
+        .attr("r", 0);
 
 }
 
@@ -125,11 +125,11 @@ function drawEdges(ctx, data) {
         .attr("x1", d => ctx.tweaker.node.x(d.parent))
         .attr("x2", d => ctx.tweaker.node.x(d))
         .attr("y1", d => ctx.tweaker.node.y(d.parent))
-        .attr("y2", d => ctx.tweaker.node.y(d))
+        .attr("y2", d => ctx.tweaker.node.y(d));
 }
 
 
 function nodeTitle(d) {
-    return d.data.code || d.data.name
+    return d.data.code || d.data.name;
 }
 

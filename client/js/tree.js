@@ -17,10 +17,13 @@ export function buildTreeDataFromFlattenedHierarchy(data = []) {
 }
 
 
-export function pruneTree(tree, maxDepth = 3) {
+export function pruneTree(tree,
+                          maxDepth = 3) {
     const copy = tree.copy();
     copy.each(n => {
         n.prunedChildren = false;
+        n.prunedParent = false;
+        n.root = false;
         const depthDelta = n.depth; // - startDepth;
         if (depthDelta >= maxDepth) {
             if (_.size(n.children) > 0) {
@@ -30,10 +33,10 @@ export function pruneTree(tree, maxDepth = 3) {
         }
     });
 
-    const allAncestors = tree.ancestors();
     const extraProps = {
-        allAncestors,
-        prunedParent: tree.parent != null
+        allAncestors: tree.ancestors(),
+        prunedParent: tree.parent != null,
+        root: true
     };
     return Object.assign(copy, extraProps);
 }
