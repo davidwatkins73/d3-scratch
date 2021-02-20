@@ -50,7 +50,8 @@ function drawAncestors(selection, ctx) {
             focus(d, ctx);
             d3.event.stopPropagation();
         })
-     .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
+        .append("title")
+        .text(d => d.data.name);
 
 
     ancestors
