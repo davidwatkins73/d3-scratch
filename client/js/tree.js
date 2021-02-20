@@ -1,30 +1,33 @@
-export function clip(tree, maxDepth = 3) {
-    disableParent(tree);
+import * as d3 from "d3";
 
-    const visit = (xs, curDepth = 0) => {
-        xs.forEach(x => {
-            x.depth = curDepth;
-            if (curDepth > 0) {
-                // repair parent links
-                enableParent(x);
-            }
-            if (curDepth >= maxDepth) {
-                disableChildren(x);
-            } else {
-                enableChildren(x);
-                visit(x.children || [], curDepth + 1);
-            }
-        });
+
+export function buildTreeDataFromFlattenedHierarchy(data = []) {
+    const tree = d3
+        .stratify()(data)
+        .sum(d => d.count || 0);
+
+    const nodesById = _.keyBy(
+        tree.descendants(),
+        d => d.id);
+
+    return {
+        tree,
+        nodesById
     };
-
-    visit([tree]);
-    return tree;
 }
 
 
+export function pruneTree(tree, maxDepth = 3) {
+    const copy = tree.copy();
+    copy.each(n => {
+        const depthDelta = n.depth; // - startDepth;
+        if (depthDelta >= maxDepth) {
+            delete n.children;
+        }
+    });
 
-export function hasParents(d) {
-    return d.parent || d.data._parent
+    const allAncestors = tree.ancestors();
+    return Object.assign(copy, {allAncestors});
 }
 
 
@@ -33,43 +36,12 @@ export function sameNode(a, b) {
 }
 
 
-export function disableParent(d) {
-    if (d.parent) {
-        d.data._parent = d.parent;
-        delete d.parent;
-    }
-    return d;
-}
-
-
 export function mkEdgeId(d) {
     return d.data.parentId + "_" + d.data.id;
 }
 
 
-function disableChildren(d) {
-    if (d.children) {
-        d.data._children = d.children;
-        delete d.children;
-    }
-    return d;
-}
 
 
-function enableChildren(d) {
-    if (d.data._children) {
-        d.children = d.data._children;
-        delete d.data._children;
-    }
-    return d;
-}
 
-
-function enableParent(d) {
-    if (d.data._parent) {
-        d.parent = d.data._parent;
-        delete d.data._parent;
-    }
-    return d;
-}
 

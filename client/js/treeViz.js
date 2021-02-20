@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import * as tree from "./tree";
+import {mkEdgeId, pruneTree, sameNode} from "./tree";
 
 
 export function setupSvg(dimensions) {
@@ -53,7 +54,7 @@ function drawNodes(ctx, data) {
         .attr("fill", "#cbf7f2")
         .attr("r", 1);
 
-    const trans = ctx.mkTransition();
+    const trans = mkTransition();
     const allNodes = nodes
         .merge(newNodes)
         .transition(trans)
@@ -79,18 +80,18 @@ function drawNodes(ctx, data) {
     nodes
         .exit()
         .selectAll("circle")
-        .transition(ctx.mkTransition())
+        .transition(mkTransition())
         .attr("r", 0)
 
     nodes
         .exit()
         .selectAll("text")
-        .transition(ctx.mkTransition())
+        .transition(mkTransition())
         .attr("stroke", "white")
 
     nodes
         .exit()
-        .transition(ctx.mkTransition())
+        .transition(mkTransition())
         .remove();
 }
 
@@ -103,7 +104,7 @@ function drawEdges(ctx, data) {
         .viz
         .select(".edges")
         .selectAll(".edge")
-        .data(edgeData, tree.mkEdgeId);
+        .data(edgeData, mkEdgeId);
 
     edges
         .exit()
@@ -113,7 +114,7 @@ function drawEdges(ctx, data) {
         .enter()
         .append("line")
         .classed("edge", true)
-        .attr("data-edge-id", tree.mkEdgeId)
+        .attr("data-edge-id", mkEdgeId)
         .attr("x1", 200)
         .attr("x2", 200)
         .attr("y1", 200)
@@ -122,7 +123,7 @@ function drawEdges(ctx, data) {
     edges
         .merge(newEdges)
         .attr("stroke", "#e5e5e5")
-        .transition(ctx.mkTransition())
+        .transition(mkTransition())
         .attr("stroke-width", 1)
         .attr("x1", d => ctx.tweaker.node.x(d.parent))
         .attr("x2", d => ctx.tweaker.node.x(d))
@@ -225,7 +226,7 @@ function drawTreemap(ctx) {
                 }
             }
         })
-        .transition(ctx.mkTransition(100))
+        .transition(mkTransition(100))
         .attr("x", d => d.x0)
         .attr("y", d => d.y0)
         .attr("width", d => d.x1 - d.x0)
@@ -243,15 +244,25 @@ function drawTreemap(ctx) {
 
 
 function focus(d, ctx) {
-    if (tree.sameNode(d, ctx.working)) {
-        if (tree.hasParents(d)) {
-            ctx.direction = "ASCEND";
-            goUp();
+    if (sameNode(d, ctx.working)) {
+        if (d.allAncestors.length > 1) {
+            ctx.working = pruneTree(
+                ctx.nodesById[d.data.parentId],
+                ctx.maxDepth);
         }
     } else {
-        ctx.direction = "DESCEND";
-        ctx.working = tree.disableParent(d);
+        ctx.working = pruneTree(
+            ctx.nodesById[d.data.id],
+            ctx.maxDepth);
     }
-    ctx.working = tree.clip(ctx.working);
+
     draw(ctx);
+}
+
+
+function mkTransition(speed = 700) {
+    return d3
+        .transition()
+        .ease(d3.easeExpOut)
+        .duration(speed);
 }

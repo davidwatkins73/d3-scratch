@@ -298,4 +298,4 @@ function mkData(dataStr) {
 }
 
 
-export default mkData(complexData);
+export default mkData(wideData);

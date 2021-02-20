@@ -1,18 +1,14 @@
 import '../styles/index.scss';
 import * as d3 from "d3";
 import testData from "./testData";
-import * as tree from "./tree";
 import * as viz from "./treeViz";
+import {buildTreeDataFromFlattenedHierarchy, pruneTree} from "./tree";
 
 const TWEAKERS = {
     topDown: {
         node: {
             x: d => d.x,
-            y: d => d.y,
-            initialTransforms: {
-                ASCEND: (ctx) => `translate(${ctx.dimensions.w / 1.2} ${ctx.dimensions.h / 2})`,
-                DESCEND: (ctx) => `translate(${ctx.dimensions.w / 2} ${ctx.dimensions.h / 2})`
-            }
+            y: d => d.y
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "middle")
@@ -22,11 +18,7 @@ const TWEAKERS = {
     leftRight: {
         node: {
             x: d => d.y,
-            y: d => d.x,
-            initialTransforms: {
-                ASCEND: (ctx) => `translate(${ctx.dimensions.margin/2 * -1} ${ctx.dimensions.h / 2})`,
-                DESCEND: (ctx) => `translate(${ctx.dimensions.w + ctx.dimensions.margin/2} ${ctx.dimensions.h / 2})`
-            }
+            y: d => d.x
         },
         label: (selection, ctx) => selection
             .attr("text-anchor", "left")
@@ -36,11 +28,8 @@ const TWEAKERS = {
 };
 
 
-
 function boot(rawData) {
-    const hierData = d3
-        .stratify()(rawData)
-        .sum(d => (d.count || 0) + 10);
+    const treeData = buildTreeDataFromFlattenedHierarchy(rawData);
 
     const dimensions = {
         w: 500,
@@ -67,29 +56,24 @@ function boot(rawData) {
         .clamp(true);
 
     const ctx = {
-        d3,
-        dimensions,
         viz: viz.setupSvg(dimensions),
         fontSize: 8,
         maxDepth: 4,
         treeLayout,
         treemapLayout,
         nodeScale,
-        hierData,
-        mkTransition: (speed = 700) => d3
-            .transition()
-            .ease(d3.easeExpOut)
-            .duration(speed),
+        tree: treeData.tree,
+        nodesById: treeData.nodesById,
+        working: treeData.tree,
         tweaker: TWEAKERS.leftRight,
-        working: hierData,
-        direction: "DESCEND",
         renderMode: "TREE"
     };
 
-    ctx.working = tree.clip(ctx.working, ctx.maxDepth);
+    ctx.working = pruneTree(
+        ctx.working,
+        ctx.maxDepth);
 
     viz.draw(ctx);
-
     global.ctx = ctx;
 }
 
@@ -119,16 +103,18 @@ function swapRenderMode() {
 
 function changeMaxDepth(amount = 1) {
     global.ctx.maxDepth = global.ctx.maxDepth + amount;
-    global.ctx.working = tree.clip(ctx.working, global.ctx.maxDepth);
+    global.ctx.working = pruneTree(
+        ctx.nodesById[global.ctx.working.data.id],
+        global.ctx.maxDepth);
     viz.draw(global.ctx);
 }
 
 
 function reset() {
     const ctx = global.ctx;
-    ctx.maxDepth = 3;
-    ctx.working = ctx.hierData;
-    ctx.working = tree.clip(ctx.working);
+    ctx.working = pruneTree(
+        ctx.tree,
+        ctx.maxDepth);
     viz.draw(ctx)
 }
 
@@ -137,14 +123,10 @@ function goUp() {
     const ctx = global.ctx;
     const w = ctx.working;
 
-    if (w.data._parent) {
-        w.parent = w.data._parent;
-        delete w.data._parent;
-
-        ctx.direction = "ASCEND";
-        ctx.working = w.parent;
-
-        ctx.working = tree.clip(ctx.working)
+    if (w.data.parentId) {
+        ctx.working = pruneTree(
+            ctx.nodesById[w.data.parentId],
+            ctx.maxDepth);
         viz.draw(ctx);
     }
 }
