@@ -20,8 +20,12 @@ export function buildTreeDataFromFlattenedHierarchy(data = []) {
 export function pruneTree(tree, maxDepth = 3) {
     const copy = tree.copy();
     copy.each(n => {
+        n.pruned = false;
         const depthDelta = n.depth; // - startDepth;
         if (depthDelta >= maxDepth) {
+            if (_.size(n.children) > 0) {
+                n.pruned = true
+            }
             delete n.children;
         }
     });

@@ -2,29 +2,40 @@ import * as d3 from "d3";
 import * as tree from "./tree";
 import {mkEdgeId, pruneTree, sameNode} from "./tree";
 
+const colors = {
+    node: {
+        prunedParent: "#98f69c",
+        prunedChildren: "#98f69c",
+        root: "#89caee",
+        normal: "#cef3f3"
+    }
+}
+
 
 export function setupSvg(dimensions) {
     const svg = d3
         .select("#viz")
         .append("svg")
         .style("border", "1px solid red")
-        .attr("viewBox", `0 0 ${dimensions.w + dimensions.marginLeft + dimensions.marginRight} ${dimensions.h + dimensions.marginTop + dimensions.marginBottom}`  )
+        .attr("viewBox", `0 0 ${totalWidth(dimensions)} ${totalHeight(dimensions)}`  )
         .attr("height", `100%`)
 
     const g = svg
         .append("g")
         .attr("transform", `translate(${dimensions.marginLeft} ${dimensions.marginTop})`);
 
-    const t =  g.append("g").classed("tree", true);
-    t.append("g").classed("edges", true);
-    t.append("g").classed("nodes", true);
-    g.append("g").classed("treemap", true)
+    g.selectAll("g")
+        .data(["tree", "edges", "nodes", "treeMap"], d => d)
+        .enter()
+        .append("g")
+        .attr("class", d => d);
 
     return g;
 }
 
 
 function drawNodes(ctx, data) {
+    console.log("drawNodes", {data});
     const nodes = ctx
         .viz
         .select(".nodes")
@@ -37,9 +48,9 @@ function drawNodes(ctx, data) {
         .classed("node", true)
         .style("cursor", "pointer")
         .attr("transform", d => d.parent
-            ?  `translate(${ctx.tweaker.node.x(d.parent)} ${ctx.tweaker.node.y(d.parent)})`
+            ?  `translate(${d.parent.x} ${ctx.tweaker.node.y(d.parent)})`
             :  `translate(0 0)`)
-        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d))
+        .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, d.pruned))
         .on("click", d => focus(d, ctx));
 
     newNodes
@@ -51,48 +62,43 @@ function drawNodes(ctx, data) {
     newNodes
         .append("circle")
         .attr("stroke", "#56aa9f")
-        .attr("fill", "#cbf7f2")
         .attr("r", 1);
 
-    const trans = mkTransition();
-    const allNodes = nodes
-        .merge(newNodes)
-        .transition(trans)
-        .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`);
+    const allNodes = newNodes
+        .merge(nodes);
 
     allNodes
-        .selectAll("circle")
-        .attr("fill", d => {
-            if (d.data._parent) { return "#8efabd"; }
-            else if (d.data._children) { return "#8efabd"; }
-            else if (d.children) { return "#b1d9f2" }
-            else { return "#d8e8f8"; }
-        })
-        .transition(trans)
-        .attr("r", d => ctx.nodeScale(d.value));
+        .select("circle")
+        .style("fill", d => {
+            if (sameNode(ctx.tree, d)) { return colors.node.root; }
+            else if (d.pruned) { return colors.node.prunedChildren; }
+            else if ( !_.isEmpty(d.allAncestors)) { return colors.node.prunedParent; }
+            else { return colors.node.normal; }
+        });
 
     allNodes
-        .selectAll("text")
+        .select("text")
         .call(ctx.tweaker.label, ctx);
+
+    allNodes
+        .transition(mkTransition())
+        .style("opacity", 1) // needed in case max depth is quickly toggled before previous transition has completed
+        .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`)
+        .select("circle")
+        .attr("r", d => ctx.nodeScale(d.value));
 
     // -- exits
 
-    nodes
+    const exit = nodes
         .exit()
-        .selectAll("circle")
         .transition(mkTransition())
+        .style("opacity", 0)
+        .remove();
+
+    exit
+        .select("circle")
         .attr("r", 0)
 
-    nodes
-        .exit()
-        .selectAll("text")
-        .transition(mkTransition())
-        .attr("stroke", "white")
-
-    nodes
-        .exit()
-        .transition(mkTransition())
-        .remove();
 }
 
 
@@ -188,7 +194,7 @@ function drawTreemap(ctx) {
 
     const nodes = ctx
         .viz
-        .select(".treemap")
+        .select(".treeMap")
         .selectAll(".block")
         .data(descendants, d => d.data.id);
 
@@ -265,4 +271,18 @@ function mkTransition(speed = 700) {
         .transition()
         .ease(d3.easeExpOut)
         .duration(speed);
+}
+
+
+function totalWidth(dimensions) {
+    return dimensions.w
+        + dimensions.marginLeft
+        + dimensions.marginRight;
+}
+
+
+function totalHeight(dimensions) {
+    return dimensions.h
+        + dimensions.marginTop
+        + dimensions.marginBottom;
 }

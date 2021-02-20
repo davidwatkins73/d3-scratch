@@ -58,7 +58,7 @@ function boot(rawData) {
     const ctx = {
         viz: viz.setupSvg(dimensions),
         fontSize: 8,
-        maxDepth: 4,
+        maxDepth: 2,
         treeLayout,
         treemapLayout,
         nodeScale,
