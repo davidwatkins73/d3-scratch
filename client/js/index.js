@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import testData from "./testData";
 import * as viz from "./treeViz";
 import {buildTreeDataFromFlattenedHierarchy, pruneTree} from "./tree";
+import {draw, setupSvg} from "./commonViz";
 
 const TWEAKERS = {
     topDown: {
@@ -56,7 +57,7 @@ function boot(rawData) {
         .clamp(true);
 
     const ctx = {
-        viz: viz.setupSvg(dimensions),
+        viz: setupSvg(dimensions),
         fontSize: 8,
         maxDepth: 2,
         treeLayout,
@@ -73,7 +74,7 @@ function boot(rawData) {
         ctx.working,
         ctx.maxDepth);
 
-    viz.draw(ctx);
+    draw(ctx);
     global.ctx = ctx;
 }
 
@@ -88,7 +89,7 @@ function swapOrientation() {
         ? TWEAKERS.topDown
         : TWEAKERS.leftRight;
 
-    viz.draw(global.ctx);
+    draw(global.ctx);
 }
 
 
@@ -97,7 +98,7 @@ function swapRenderMode() {
         ? "TREEMAP"
         : "TREE";
 
-    viz.draw(global.ctx);
+    draw(global.ctx);
 }
 
 
@@ -106,7 +107,7 @@ function changeMaxDepth(amount = 1) {
     global.ctx.working = pruneTree(
         ctx.nodesById[global.ctx.working.data.id],
         global.ctx.maxDepth);
-    viz.draw(global.ctx);
+    draw(global.ctx);
 }
 
 
@@ -115,7 +116,7 @@ function reset() {
     ctx.working = pruneTree(
         ctx.tree,
         ctx.maxDepth);
-    viz.draw(ctx)
+    draw(ctx)
 }
 
 
@@ -127,7 +128,7 @@ function goUp() {
         ctx.working = pruneTree(
             ctx.nodesById[w.data.parentId],
             ctx.maxDepth);
-        viz.draw(ctx);
+        draw(ctx);
     }
 }
 
