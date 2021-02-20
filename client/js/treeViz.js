@@ -90,6 +90,11 @@ function drawNodes(ctx, data) {
         .select("circle")
         .attr("r", 0);
 
+    allNodes
+        .filter(d => d.root)
+        .append("circle")
+        .attr("r", 2)
+        .attr("fill", "red")
 }
 
 
