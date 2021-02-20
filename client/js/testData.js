@@ -289,7 +289,7 @@ function mkData(dataStr) {
                     id,
                     code,
                     parentId: pId,
-                    count: Math.floor(Math.random() * 10),
+                    count: Math.floor(Math.random() * 10) + 3,
                     name: mkName(Math.ceil(Math.random() * 3))
                 };
             }))

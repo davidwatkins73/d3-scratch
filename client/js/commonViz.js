@@ -32,11 +32,8 @@ export function setupSvg(dimensions) {
         .append("g")
         .attr("transform", `translate(${dimensions.marginLeft} ${dimensions.marginTop})`);
 
-    g.selectAll("g")
-        .data(["tree", "edges", "nodes", "treeMap"], d => d)
-        .enter()
-        .append("g")
-        .attr("class", d => d);
+    g.append("g").classed("treeMap", true);
+    g.append("g").classed("tree", true);
 
     return g;
 }
@@ -79,9 +76,6 @@ function hide(ctx, name) {
         .select(name)
         .style("display", "none");
 }
-
-
-
 
 
 function totalWidth(dimensions) {

@@ -16,10 +16,29 @@ const COLORS = {
     }
 };
 
+const FONT = {
+    node: {
+        size: "18px",
+        color: "#447"
+    }
+};
+
+
+function setupLayers(viz) {
+    return viz
+        .select(".tree")
+        .selectAll(".layer")
+        .data(["edges", "nodes"])
+        .enter()
+        .append("g")
+        .attr("class", d => [d, "layer"].join(" "));
+}
 
 export function drawTree(ctx) {
     const root = ctx
         .treeLayout(ctx.working);
+
+    setupLayers(ctx.viz);
 
     ctx.nodeScale.domain([1, root.value]);
 
@@ -38,13 +57,13 @@ function drawAncestors(selection, ctx) {
         .enter()
         .append("circle")
         .classed("ancestor", true)
-        .attr("r", 3)
+        .attr("r", 8)
         .attr("fill", d => d.parent == null
             ? COLORS.node.ancestorRoot.fill
             : COLORS.node.ancestor.fill)
         .attr("stroke", COLORS.node.ancestor.stroke)
         .attr("stroke-width", 0.5)
-        .attr("transform", (d, i) => `translate(${-10 + (i) * -7}, 0)`)
+        .attr("transform", (d, i) => `translate(${-20 + (i) * -20} 0)`)
         .attr("title", d => d.data.name)
         .on("click", d => {
             focus(d, ctx);
@@ -83,8 +102,8 @@ function drawNodes(ctx, data) {
     newNodes
         .append("text")
         .text(d => d.data.name)
-        .attr("fill", "black")
-        .attr("font-size", `${ctx.fontSize}px`);
+        .attr("fill", FONT.node.color)
+        .attr("font-size", FONT.node.size);
 
     newNodes
         .append("circle")
@@ -111,7 +130,7 @@ function drawNodes(ctx, data) {
         .style("opacity", 1) // needed in case max depth is quickly toggled before previous transition has completed
         .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`)
         .select("circle")
-        .attr("r", d => ctx.nodeScale(d.value));
+        .attr("r", d => ctx.nodeScale(d.value || 0));
 
     // -- exits
 
@@ -160,11 +179,6 @@ function drawEdges(ctx, data) {
         .attr("x2", d => ctx.tweaker.node.x(d))
         .attr("y1", d => ctx.tweaker.node.y(d.parent))
         .attr("y2", d => ctx.tweaker.node.y(d));
-}
-
-
-function nodeTitle(d) {
-    return d.data.code || d.data.name;
 }
 
 

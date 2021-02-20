@@ -1,4 +1,18 @@
 import {focus, mkTransition} from "./commonViz";
+import * as d3 from "d3";
+
+const FONT = {
+    node: {
+        size: "18px",
+        color: "#447"
+    }
+};
+
+const COLORS = {
+    node: {
+        fill: "#c5eef5", stroke: "#59c3f6",
+    }
+};
 
 
 export function drawTreemap(ctx) {
@@ -20,33 +34,23 @@ export function drawTreemap(ctx) {
         .classed("block", true);
 
     newNodes
-        .append("rect")
+        .append("rect");
 
     newNodes
-        .filter(d => d.depth <   3)
+        // .filter(d => d.depth < 2)
         .append("text")
-        .attr("fill", "black")
-        .text(d => d.data.name)
+        .attr("font-size", FONT.node.size)
+        .attr("fill", FONT.node.color);
 
     nodes
         .merge(newNodes)
-        .selectAll("rect")
-        .attr("fill", "pink")
-        .attr("stroke", "red")
+        .select("rect")
+        .attr("fill", COLORS.node.fill)
+        .attr("stroke", COLORS.node.stroke)
         .attr("opacity", 0.2)
         .on("click.focus", d => {
-            if (d.depth === 1) {
-                focus(d, ctx)
-            } else if (d.depth > 1) {
-                let ptr = d.parent;
-                while (ptr !== null) {
-                    if (ptr.depth === 1) {
-                        focus(ptr, ctx);
-                        break;
-                    }
-                    ptr = ptr.parent;
-                }
-            }
+            focus(d, ctx);
+            d3.event.stopPropagation();
         })
         .transition(mkTransition(100))
         .attr("x", d => d.x0)
@@ -55,10 +59,10 @@ export function drawTreemap(ctx) {
         .attr("height", d => d.y1 - d.y0);
 
     nodes.merge(newNodes)
-        .selectAll("text")
-        .attr("font-size", 9)
+        .select("text")
         .attr("dx", d => d.x0 + 10)
-        .attr("dy", d => d.y0 + 11);
+        .attr("dy", d => d.y0 + 16)
+        .text(d => d.data.name + (d.prunedChildren ? "..." : ""))
 
     nodes.exit()
         .remove();

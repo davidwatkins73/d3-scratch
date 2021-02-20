@@ -1,7 +1,6 @@
 import '../styles/index.scss';
 import * as d3 from "d3";
 import testData from "./testData";
-import * as viz from "./treeViz";
 import {buildTreeDataFromFlattenedHierarchy, pruneTree} from "./tree";
 import {draw, setupSvg} from "./commonViz";
 
@@ -33,27 +32,30 @@ function boot(rawData) {
     const treeData = buildTreeDataFromFlattenedHierarchy(rawData);
 
     const dimensions = {
-        w: 500,
-        h: 500,
-        marginLeft: 50,
-        marginRight: 100,
+        w: 1000,
+        h: 1000,
+        marginLeft: 100,
+        marginRight: 200,
         marginTop: 50,
         marginBottom: 50,
     };
 
     const treeLayout = d3
         .tree()
-        .size([dimensions.w, dimensions.h]);
+        .size([
+            dimensions.w,
+            dimensions.h
+        ]);
 
     const treemapLayout = d3
         .treemap()
-        .padding(16)
+        .padding(32)
         .size([dimensions.w, dimensions.h])
 
     const nodeScale = d3
         .scaleLog()
         .domain([1, 20])
-        .range([2, 10])
+        .range([5, 20])
         .clamp(true);
 
     const ctx = {
@@ -104,6 +106,7 @@ function swapRenderMode() {
 
 function changeMaxDepth(amount = 1) {
     global.ctx.maxDepth = global.ctx.maxDepth + amount;
+    global.ctx.maxDepth = _.clamp(global.ctx.maxDepth, 1, 10);
     global.ctx.working = pruneTree(
         ctx.nodesById[global.ctx.working.data.id],
         global.ctx.maxDepth);
