@@ -18,22 +18,27 @@ const COLORS = {
 
 const FONT = {
     node: {
-        size: "18px",
+        size: 18,
         color: "#447"
     }
 };
 
 
 export function drawTree(ctx) {
-    const root = layout(ctx.dimensions, ctx.working);
 
     setupLayers(ctx.viz);
 
-    ctx.nodeScale.domain([1, root.value]);
+    const treeRoot = layout(ctx.dimensions, ctx.working);
+    const treeFlat = treeRoot.descendants();
 
-    const descendants = root.descendants();
-    drawEdges(ctx, descendants);
-    drawNodes(ctx, descendants);
+    const nodeScale = d3
+        .scaleLog()
+        .domain([1, treeRoot.value])
+        .range([5, 20])
+        .clamp(true);
+
+    drawEdges(ctx, treeFlat);
+    drawNodes(ctx, treeFlat, nodeScale);
 }
 
 
@@ -70,7 +75,7 @@ function drawAncestors(selection, ctx) {
 }
 
 
-function drawNodes(ctx, data) {
+function drawNodes(ctx, data, nodeScale) {
     const nodes = ctx
         .viz
         .select(".nodes")
@@ -112,14 +117,14 @@ function drawNodes(ctx, data) {
 
     allNodes
         .select("text")
-        .call(ctx.tweaker.label, ctx)
+        .call(ctx.tweaker.label, nodeScale, FONT.node.size);
 
     allNodes
         .transition(mkTransition())
         .style("opacity", 1) // needed in case max depth is quickly toggled before previous transition has completed
         .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`)
         .select("circle")
-        .attr("r", d => ctx.nodeScale(d.value || 0));
+        .attr("r", d => nodeScale(d.value || 0));
 
     // -- exits
 

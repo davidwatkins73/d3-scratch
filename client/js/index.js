@@ -1,5 +1,4 @@
 import '../styles/index.scss';
-import * as d3 from "d3";
 import testData from "./testData";
 import {buildTreeDataFromFlattenedHierarchy, pruneTree} from "./tree";
 import {draw, setupSvg} from "./commonViz";
@@ -10,9 +9,9 @@ const TWEAKERS = {
             x: d => d.x,
             y: d => d.y
         },
-        label: (selection, ctx) => selection
+        label: (selection, nodeScale, fontSize) => selection
             .attr("text-anchor", "middle")
-            .attr("dy", d => ctx.nodeScale(d.value) + ctx.fontSize + 2)
+            .attr("dy", d => nodeScale(d.value) + fontSize + 2)
             .attr("dx", 0)
     },
     leftRight: {
@@ -20,10 +19,10 @@ const TWEAKERS = {
             x: d => d.y,
             y: d => d.x
         },
-        label: (selection, ctx) => selection
+        label: (selection, nodeScale, fontSize) => selection
             .attr("text-anchor", "left")
-            .attr("dx", d => ctx.nodeScale(d.value) + 2)
-            .attr("dy", ctx.fontSize / 1.2)
+            .attr("dx", d => nodeScale(d.value) + 2)
+            .attr("dy", fontSize / 2.7)
     }
 };
 
@@ -40,19 +39,10 @@ function boot(rawData) {
         marginBottom: 50,
     };
 
-
-    const nodeScale = d3
-        .scaleLog()
-        .domain([1, 20])
-        .range([5, 20])
-        .clamp(true);
-
     const ctx = {
         viz: setupSvg(dimensions),
         dimensions,
-        fontSize: 8,
         maxDepth: 2,
-        nodeScale,
         tree: treeData.tree,
         nodesById: treeData.nodesById,
         working: treeData.tree,
