@@ -3,41 +3,19 @@ import testData from "./testData";
 import {buildTreeDataFromFlattenedHierarchy, pruneTree} from "./tree";
 import {draw, setupSvg} from "./commonViz";
 
-const TWEAKERS = {
-    topDown: {
-        node: {
-            x: d => d.x,
-            y: d => d.y
-        },
-        label: (selection, nodeScale, fontSize) => selection
-            .attr("text-anchor", "middle")
-            .attr("dy", d => nodeScale(d.value) + fontSize + 2)
-            .attr("dx", 0)
-    },
-    leftRight: {
-        node: {
-            x: d => d.y,
-            y: d => d.x
-        },
-        label: (selection, nodeScale, fontSize) => selection
-            .attr("text-anchor", "left")
-            .attr("dx", d => nodeScale(d.value) + 2)
-            .attr("dy", fontSize / 2.7)
-    }
+
+const dimensions = {
+    w: 1000,
+    h: 1000,
+    marginLeft: 100,
+    marginRight: 200,
+    marginTop: 50,
+    marginBottom: 50,
 };
 
 
 function boot(rawData) {
     const treeData = buildTreeDataFromFlattenedHierarchy(rawData);
-
-    const dimensions = {
-        w: 1000,
-        h: 1000,
-        marginLeft: 100,
-        marginRight: 200,
-        marginTop: 50,
-        marginBottom: 50,
-    };
 
     const ctx = {
         viz: setupSvg(dimensions),
@@ -46,8 +24,8 @@ function boot(rawData) {
         tree: treeData.tree,
         nodesById: treeData.nodesById,
         working: treeData.tree,
-        tweaker: TWEAKERS.leftRight,
-        renderMode: "TREE"
+        orientation: "LEFT_RIGHT",      // LEFT_RIGHT | TOP_DOWN
+        renderMode: "TREE"              // TREE | TREEMAP
     };
 
     ctx.working = pruneTree(
@@ -55,26 +33,24 @@ function boot(rawData) {
         ctx.maxDepth);
 
     draw(ctx);
-    global.ctx = ctx;
+
+    return ctx;
 }
-
-
-boot(testData);
 
 
 // --- interact
 
-function swapOrientation() {
-    global.ctx.tweaker = global.ctx.tweaker === TWEAKERS.leftRight
-        ? TWEAKERS.topDown
-        : TWEAKERS.leftRight;
+function swapOrientation(ctx) {
+    ctx.orientation = ctx.orientation === "LEFT_RIGHT"
+        ? "TOP_DOWN"
+        : "LEFT_RIGHT";
 
-    draw(global.ctx);
+    draw(ctx);
 }
 
 
-function swapRenderMode() {
-    global.ctx.renderMode = global.ctx.renderMode === "TREE"
+function swapRenderMode(ctx) {
+    ctx.renderMode = ctx.renderMode === "TREE"
         ? "TREEMAP"
         : "TREE";
 
@@ -82,40 +58,42 @@ function swapRenderMode() {
 }
 
 
-function changeMaxDepth(amount = 1) {
-    global.ctx.maxDepth = global.ctx.maxDepth + amount;
-    global.ctx.maxDepth = _.clamp(global.ctx.maxDepth, 1, 10);
-    global.ctx.working = pruneTree(
+function changeMaxDepth(ctx, amount = 1) {
+    ctx.maxDepth = ctx.maxDepth + amount;
+    ctx.maxDepth = _.clamp(global.ctx.maxDepth, 1, 10);
+    ctx.working = pruneTree(
         ctx.nodesById[global.ctx.working.data.id],
-        global.ctx.maxDepth);
-    draw(global.ctx);
+        ctx.maxDepth);
+
+    draw(ctx);
 }
 
 
-function reset() {
-    const ctx = global.ctx;
+function reset(ctx) {
+    ctx.maxDepth = 2;
     ctx.working = pruneTree(
         ctx.tree,
         ctx.maxDepth);
+
     draw(ctx)
 }
 
 
-function goUp() {
-    const ctx = global.ctx;
-    const w = ctx.working;
-
-    if (_.isNumber(w.data.parentId)) {
+function goUp(ctx) {
+    if (_.isNumber(ctx.working.data.parentId)) {
         ctx.working = pruneTree(
-            ctx.nodesById[w.data.parentId],
+            ctx.nodesById[ctx.working.data.parentId],
             ctx.maxDepth);
         draw(ctx);
     }
 }
 
-global.changeMaxDepth = changeMaxDepth;
-global.swapOrientation = swapOrientation;
-global.swapRenderMode = swapRenderMode;
-global.reset = reset;
-global.goUp = goUp;
+
+global.ctx = boot(testData);
+
+global.changeMaxDepth = (amount) => changeMaxDepth(global.ctx, amount);
+global.swapOrientation = () => swapOrientation(global.ctx);
+global.swapRenderMode = () => swapRenderMode(global.ctx);
+global.reset = () => reset(global.ctx);
+global.goUp = () => goUp(global.ctx);
 

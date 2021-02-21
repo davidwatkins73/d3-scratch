@@ -24,6 +24,31 @@ const FONT = {
 };
 
 
+const ORIENTATION = {
+    TOP_DOWN: {
+        node: {
+            x: d => d.x,
+            y: d => d.y
+        },
+        label: (selection, nodeScale, fontSize) => selection
+            .attr("text-anchor", "middle")
+            .attr("dy", d => nodeScale(d.value) + fontSize + 2)
+            .attr("dx", 0)
+    },
+    LEFT_RIGHT: {
+        node: {
+            x: d => d.y,
+            y: d => d.x
+        },
+        label: (selection, nodeScale, fontSize) => selection
+            .attr("text-anchor", "left")
+            .attr("dx", d => nodeScale(d.value) + 2)
+            .attr("dy", fontSize / 2.7)
+    }
+};
+
+
+
 export function drawTree(ctx) {
 
     setupLayers(ctx.viz);
@@ -88,9 +113,9 @@ function drawNodes(ctx, data, nodeScale) {
         .classed("node", true)
         .style("cursor", "pointer")
         .attr("transform", d => d.parent
-            ?  `translate(${d.parent.x} ${ctx.tweaker.node.y(d.parent)})`
+            ?  `translate(${d.parent.x} ${orient(ctx).node.y(d.parent)})`
             :  `translate(0 0)`)
-        // .on("mouseenter", d => console.log(`:[${nodeTitle(d)}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
+        .on("mouseenter", d => console.log(`:[${d.data.code}]`, {pc: d.prunedChildren, pp: d.prunedParent, r: d.root}))
         .on("click", d => focus(d, ctx));
 
     newNodes
@@ -117,12 +142,12 @@ function drawNodes(ctx, data, nodeScale) {
 
     allNodes
         .select("text")
-        .call(ctx.tweaker.label, nodeScale, FONT.node.size);
+        .call(orient(ctx).label, nodeScale, FONT.node.size);
 
     allNodes
         .transition(mkTransition())
         .style("opacity", 1) // needed in case max depth is quickly toggled before previous transition has completed
-        .attr("transform", d => `translate(${ctx.tweaker.node.x(d)} ${ctx.tweaker.node.y(d)})`)
+        .attr("transform", d => `translate(${orient(ctx).node.x(d)} ${orient(ctx).node.y(d)})`)
         .select("circle")
         .attr("r", d => nodeScale(d.value || 0));
 
@@ -137,6 +162,11 @@ function drawNodes(ctx, data, nodeScale) {
     exit
         .select("circle")
         .attr("r", 0);
+}
+
+
+function orient(ctx) {
+    return ORIENTATION[ctx.orientation];
 }
 
 
@@ -169,10 +199,10 @@ function drawEdges(ctx, data) {
         .attr("stroke", COLORS.edge.stroke)
         .transition(mkTransition())
         .attr("stroke-width", 1)
-        .attr("x1", d => ctx.tweaker.node.x(d.parent))
-        .attr("x2", d => ctx.tweaker.node.x(d))
-        .attr("y1", d => ctx.tweaker.node.y(d.parent))
-        .attr("y2", d => ctx.tweaker.node.y(d));
+        .attr("x1", d => orient(ctx).node.x(d.parent))
+        .attr("x2", d => orient(ctx).node.x(d))
+        .attr("y1", d => orient(ctx).node.y(d.parent))
+        .attr("y2", d => orient(ctx).node.y(d));
 }
 
 
@@ -210,4 +240,3 @@ function layout(dimensions, tree) {
         .tree()
         .size([dimensions.w, dimensions.h])(tree);
 }
-

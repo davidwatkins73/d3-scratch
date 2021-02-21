@@ -20,12 +20,47 @@ const simpleData = `
 const wideData = `
     a
      aa
+      aaa
+      aab
+      aac
+      aad
+      aae
      ab
+      aba
+      abb
+      abc
+      abd
+      abe
      ac
+      aca
+      acb
+      acc
+      acd
+      ace
      ad
+      ada
+      adb
+      adc
+      add
+      ade
      ae
+      aea
+      aeb
+      aec
+      aed
+      aee
      af
+      afa
+      afb
+      afc
+      afd
+      afe
      ag
+      aga
+      agb
+      agc
+      agd
+      age
      ah
     b
      ba
@@ -62,7 +97,6 @@ const wideData = `
      ee
      ef
      eg
-     ah
     f
      fa
      fb
@@ -107,9 +141,7 @@ const wideData = `
      pe
      pf
      pg
-     ph
-    
-           `;
+     ph`;
 
 const complexData = `
     a 
@@ -298,4 +330,4 @@ function mkData(dataStr) {
 }
 
 
-export default mkData(complexData);
+export default mkData(wideData);
