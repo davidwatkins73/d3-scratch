@@ -127,7 +127,7 @@ function goUp() {
     const ctx = global.ctx;
     const w = ctx.working;
 
-    if (w.data.parentId) {
+    if (_.isNumber(w.data.parentId)) {
         ctx.working = pruneTree(
             ctx.nodesById[w.data.parentId],
             ctx.maxDepth);
