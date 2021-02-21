@@ -24,19 +24,8 @@ const FONT = {
 };
 
 
-function setupLayers(viz) {
-    return viz
-        .select(".tree")
-        .selectAll(".layer")
-        .data(["edges", "nodes"])
-        .enter()
-        .append("g")
-        .attr("class", d => [d, "layer"].join(" "));
-}
-
 export function drawTree(ctx) {
-    const root = ctx
-        .treeLayout(ctx.working);
+    const root = layout(ctx.dimensions, ctx.working);
 
     setupLayers(ctx.viz);
 
@@ -198,3 +187,22 @@ function determineNodeStroke(d, ctx) {
 function determineNodeFill(d, ctx) {
     return determineNodeColor(d, ctx).fill;
 }
+
+
+function setupLayers(viz) {
+    return viz
+        .select(".tree")
+        .selectAll(".layer")
+        .data(["edges", "nodes"])
+        .enter()
+        .append("g")
+        .attr("class", d => [d, "layer"].join(" "));
+}
+
+
+function layout(dimensions, tree) {
+    return d3
+        .tree()
+        .size([dimensions.w, dimensions.h])(tree);
+}
+

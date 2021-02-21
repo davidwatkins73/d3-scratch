@@ -40,17 +40,6 @@ function boot(rawData) {
         marginBottom: 50,
     };
 
-    const treeLayout = d3
-        .tree()
-        .size([
-            dimensions.w,
-            dimensions.h
-        ]);
-
-    const treemapLayout = d3
-        .treemap()
-        .padding(32)
-        .size([dimensions.w, dimensions.h])
 
     const nodeScale = d3
         .scaleLog()
@@ -60,10 +49,9 @@ function boot(rawData) {
 
     const ctx = {
         viz: setupSvg(dimensions),
+        dimensions,
         fontSize: 8,
         maxDepth: 2,
-        treeLayout,
-        treemapLayout,
         nodeScale,
         tree: treeData.tree,
         nodesById: treeData.nodesById,

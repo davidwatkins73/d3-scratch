@@ -16,17 +16,15 @@ const COLORS = {
 
 
 export function drawTreemap(ctx) {
-    const root = ctx
-        .treemapLayout(ctx.working)
-
-    const descendants = root
-        .descendants();
+    const root = layout(ctx.dimensions, ctx.working);
 
     const nodes = ctx
         .viz
         .select(".treeMap")
         .selectAll(".block")
-        .data(descendants, d => d.data.id);
+        .data(
+            root.descendants(),
+            d => d.data.id);
 
     const newNodes = nodes
         .enter()
@@ -66,4 +64,14 @@ export function drawTreemap(ctx) {
 
     nodes.exit()
         .remove();
+}
+
+
+function layout(dimensions, tree) {
+    const treemapLayout = d3
+        .treemap()
+        .padding(32)
+        .size([dimensions.w, dimensions.h])
+
+    return treemapLayout(tree);
 }
